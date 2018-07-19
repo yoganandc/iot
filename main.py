@@ -5,6 +5,7 @@ import queue
 import cmd
 import json
 from digi.xbee.devices import Raw802Device
+from digi.xbee.exception import XBeeException
 from digi.xbee.models.address import XBee16BitAddress
 from constants import *
 
@@ -61,13 +62,20 @@ class XBeeTransmitter:
         self._dispatcher.start()
         
     def stop(self):
+        # Stop dispatcher
         self._stop_flag = True
         self._dispatcher.join()
+        
+        # Throw out remaining items
+        while not self._q.empty():
+            self._q.get()
+            self._q.task_done()
+        
+        # Get the queue to join
         self._q.join()
-        self._xbee.close()
         
     def send_link_update(self, to, snapshot):
-        self._q.put((to, snapshot))
+        self._q.put((MSG_LINK, (to, snapshot)))
         
     def _dispatch(self):
         dispatch_table = {
@@ -91,7 +99,10 @@ class XBeeTransmitter:
             pkt += edge[0].to_bytes(2, BYTEORDER)
             pkt += edge[1].to_bytes(2, BYTEORDER)
             
-        self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS[to]), pkt)
+        try:
+            self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS[to]), pkt)
+        except XBeeException:
+            pass
         
         
 class XBeeReceiver:
@@ -181,23 +192,51 @@ class Prompt(cmd.Cmd):
     intro = 'Welcome to the traffic manager shell. Type help or ? to list commands.\n'
     prompt = '> '
 
-    def do_update(self, arg1, arg2, arg3):
+    def do_update(self, arg):
         """Update edge from weight from src dst: update 1 2 50"""
-        self._graph.update(int(arg1), int(arg2), int(arg3))
-        print("Updated edge from %s to %s to %s" % (arg1, arg2, arg3))
+        try:
+            args = arg.split()
+            src = int(args[0])
+            dst = int(args[1])
+            weight = int(args[2])
+            
+        except (ValueError, IndexError):
+            print("unable to parse input")
+            return False
+            
+        self._graph.update(src, dst, weight)
+        print("Updated edge from %d to %d to %d" % (src, dst, weight))
+        return False
         
-    def do_show(self):
+    def do_show(self, _):
         """Display graph"""
-        print(json.dumps(self._graph.snapshot(), indent=4))
+        snapshot = self._graph.snapshot()
+        for node in snapshot:
+            print(str(node) + ": ", end='')
+            print(json.dumps(snapshot[node]))
+        return False
+    
+    @staticmethod
+    def do_EOF(_):
+        print('terminating...')
+        return True
+    
+    help_exit = help_EOF = lambda _: print("stop and exit gracefully")
+    do_exit = do_EOF
 
 
 def main():
     graph = Graph()
     xbee = Raw802Device(PORT, BAUD)
     xbee.open()
+    daemon = XBeeDaemon(graph, xbee)
     
-    XBeeDaemon(graph, xbee).start()
-    Prompt(graph).cmdloop()
+    try:
+        daemon.start()
+        Prompt(graph).cmdloop()
+    finally:
+        daemon.stop()
+        xbee.close()
 
 
 if __name__ == "__main__":
