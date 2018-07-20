@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "pkt.h"
-#include "address.h"
 #include "router.h"
 #include "rx_tx.h"
 
@@ -23,7 +22,7 @@ void setup()
   while(!xbee_address(&node_address));
   Serial.println(node_address, HEX);
   
-  router_init(address_to_id(node_address));
+  router_init(node_address);
 }
 
 void loop() 
@@ -62,7 +61,7 @@ void do_xbee_read()
     }
     else {
       Serial.println(F("Received DV message"));
-      process_dv_update(address_to_id(data.address), &pkt);
+      process_dv_update(data.address, &pkt);
     }
   }
 }

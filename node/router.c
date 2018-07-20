@@ -4,6 +4,7 @@
 #include "pkt.h"
 #include "rx_tx.h"
 #include "logger.h"
+#include "address.h"
 
 static const uint8_t INF = 255;
 
@@ -18,8 +19,10 @@ static uint8_t num_routers; // for neighbors
 
 static bool bf();
 static void update_neighbors();
+static void log_dv();
 
-void router_init(uint8_t node_id) {
+void router_init(uint16_t node_address) 
+{
   for(int i = 0; i < MAX_ROUTERS; i++) {
     for(int j = 0; j < MAX_ROUTERS; j++) {
       if(i != j) {
@@ -28,7 +31,7 @@ void router_init(uint8_t node_id) {
     }
   }
 
-  self = node_id;
+  self = address_to_id(node_address);
 }
 
 void process_link_update(struct pkt *pkt) 
@@ -51,11 +54,13 @@ void process_link_update(struct pkt *pkt)
   
   bf();
   update_neighbors();
+  log_dv();
 }
 
-void process_dv_update(uint8_t from, struct pkt *pkt)
+void process_dv_update(uint16_t from_address, struct pkt *pkt)
 {
   bool changed = false;
+  uint8_t from = address_to_id(from_address);
 
   while(has_next(pkt)) {
     struct pkt_entry entry;
@@ -71,6 +76,7 @@ void process_dv_update(uint8_t from, struct pkt *pkt)
 
   if(bf() || changed) {
     update_neighbors();
+    log_dv();
   }
 }
 

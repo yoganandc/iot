@@ -11,9 +11,9 @@ extern "C"
 
 #define MAX_ROUTERS 20
 
-void router_init(uint8_t node_id);
+void router_init(uint16_t node_address);
 void process_link_update(struct pkt *pkt);
-void process_dv_update(uint8_t from, struct pkt *pkt);
+void process_dv_update(uint16_t from_address, struct pkt *pkt);
 
 #ifdef __cplusplus
 }

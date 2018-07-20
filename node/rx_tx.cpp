@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "rx_tx.h"
-#include "logger.h"
 
 static SoftwareSerial xbee_serial(2, 3);
 static XBee xbee;
