@@ -1,9 +1,10 @@
+#include <stdint.h>
 #include "address.h"
 #include "router.h"
 
 static uint8_t num_routers = 5;
 static uint16_t addresses[MAX_ROUTERS] = {
-  0x1234,
+  // 0x1234,
   0x5678,
   0x90AB,
   0xCDEF,

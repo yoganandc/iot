@@ -1,5 +1,9 @@
+#include <stdbool.h>
+#include <stdint.h>
 #include "router.h"
 #include "pkt.h"
+#include "rx_tx.h"
+#include "logger.h"
 
 static const uint8_t INF = 255;
 
@@ -11,6 +15,9 @@ static uint8_t neighbors[MAX_ROUTERS];
 
 static uint8_t num_neighbors; // for dv and next_hop
 static uint8_t num_routers; // for neighbors
+
+static bool bf();
+static void update_neighbors();
 
 void router_init(uint8_t node_id) {
   for(int i = 0; i < MAX_ROUTERS; i++) {
@@ -24,7 +31,7 @@ void router_init(uint8_t node_id) {
   self = node_id;
 }
 
-void process_link_update(uint8_t from, struct pkt *pkt) 
+void process_link_update(struct pkt *pkt) 
 {
   uint8_t count = 0;
   
@@ -33,17 +40,38 @@ void process_link_update(uint8_t from, struct pkt *pkt)
     next(pkt, &entry);
     neighbors[count++] = entry.node;
 
-    dv[from][self] = dv[self][from] = entry.cost;
+    if(entry.node >= num_routers) {
+      num_routers = entry.node;
+    }
+
+    dv[entry.node][self] = dv[self][entry.node] = entry.cost;
   }
 
   num_neighbors = count;
-
   
+  bf();
+  update_neighbors();
 }
 
 void process_dv_update(uint8_t from, struct pkt *pkt)
 {
-  
+  bool changed = false;
+
+  while(has_next(pkt)) {
+    struct pkt_entry entry;
+    next(pkt, &entry);
+
+    if(entry.node >= num_routers) {
+      num_routers = entry.node;
+      changed = true;
+    }
+
+    dv[from][entry.node] = entry.cost;
+  }
+
+  if(bf() || changed) {
+    update_neighbors();
+  }
 }
 
 static bool bf() 
@@ -70,5 +98,42 @@ static bool bf()
   }
 
   return changed;
+}
+
+static void update_neighbors()
+{
+  for(int i = 0; i < num_neighbors; i++) {
+    struct xbee_data data;
+    data.buf = dv[self];
+    data.len = num_routers;
+    data.address = id_to_address(neighbors[i]);
+
+    xbee_tx(&data);
+  }
+}
+
+static void log_dv() 
+{
+  log_serial("\n");
+  log_serial("    ");
+
+  for(int i = 0; i < num_routers; i++) {
+    log_serial(" | %2d", i);
+  }
+  log_serial("\n");
+  log_serial("----");
+
+  for(int i = 0; i < num_routers; i++) {
+    log_serial("-----", i);
+  }
+  
+  for(int i = 0; i < num_routers; i++) {
+    log_serial("%2d ", i);
+    for(int j = 0; j < num_routers; j++) {
+      log_serial(" | %2d", dv[i][j]);
+    }
+    log_serial("\n");
+  }
+  log_serial("\n");
 }
 

@@ -1,8 +1,9 @@
-#include <XBee.h>
-#include <SoftwareSerial.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include "pkt.h"
 #include "address.h"
 #include "router.h"
+#include "rx_tx.h"
 
 #define XBEE_READ_CYCLE 200U
 #define LCD_UPDATE_CYCLE 1000U
@@ -10,18 +11,24 @@
 unsigned long last_xbee_read = 0;
 unsigned long last_lcd_updated = 0;
 
-SoftwareSerial xbee_serial(2, 3);
-XBee xbee;
-
 void setup() 
 {
   Serial.begin(9600);
-  xbee_serial.begin(9600);
-  xbee.setSerial(xbee_serial);
+  Serial.print(F("Booting... "));
+  xbee_init();
+  Serial.println(F("Done"));
+  
+  Serial.print(F("Retrieving node ID... "));
+  uint16_t node_address;
+  while(!xbee_address(&node_address));
+  Serial.println(node_address, HEX);
+  
+  router_init(address_to_id(node_address));
 }
 
 void loop() 
 {
+//  for(;;);
   if(check(&last_xbee_read, XBEE_READ_CYCLE)) {
     do_xbee_read();
   }
@@ -30,7 +37,7 @@ void loop()
   }
 }
 
-boolean check(unsigned long *last_millis, unsigned int cycle)
+bool check(unsigned long *last_millis, unsigned int cycle)
 {
   unsigned long current_millis = millis();
   if(current_millis - *last_millis >= cycle) {
@@ -43,56 +50,22 @@ boolean check(unsigned long *last_millis, unsigned int cycle)
 
 void do_xbee_read() 
 {
-  Rx16Response rx16 = Rx16Response();
-  xbee.readPacket();
+  struct xbee_data data;
   
-  if(xbee.getResponse().isAvailable()) {
-    if(xbee.getResponse().getApiId() == RX_16_RESPONSE) {
-      xbee.getResponse().getRx16Response(rx16);
-
-      uint8_t *buf = rx16.getData();
-      uint8_t len = rx16.getDataLength();
-      uint8_t from = address_to_id(rx16.getRemoteAddress16());
-
-      struct pkt pkt;
-      pkt_init(&pkt, buf, len);
-
-      if(pkt.type == MSG_LINK) {
-        process_link_update(from, &pkt);
-      }
-      else {
-        process_dv_update(from, &pkt);
-      }
+  if(xbee_rx(&data)) {
+    struct pkt pkt;
+    pkt_init(&pkt, data.buf, data.len);
+  
+    if(pkt.type == MSG_LINK) {
+      Serial.println(F("Recieved LINK message"));
+      process_link_update(&pkt);
+    }
+    else {
+      Serial.println(F("Received DV message"));
+      process_dv_update(address_to_id(data.address), &pkt);
     }
   }
 }
-
-//void do_xbee_read() {
-//  Rx16Response rx16 = Rx16Response();
-//  xbee.readPacket();
-//  
-//  if(xbee.getResponse().isAvailable()) {
-//    if(xbee.getResponse().getApiId() == RX_16_RESPONSE) {
-//      xbee.getResponse().getRx16Response(rx16);
-//
-//      Serial.print("Received a packet from ");
-//      Serial.print(rx16.getRemoteAddress16(), HEX);
-//      Serial.print(": ");
-//    
-//      uint8_t *rx = rx16.getData();
-//      
-//      for(int i = 0; i < rx16.getDataLength(); i++) {
-//        Serial.print(rx[i], HEX);
-//        Serial.print(" ");
-//      }
-//    
-//      Serial.println();
-//    }
-//  }
-//  else {
-//    Serial.println("Received no packet");
-//  }
-//}
 
 void do_lcd_update() 
 {

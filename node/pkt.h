@@ -25,6 +25,7 @@ struct pkt_entry {
 };
 
 void pkt_init(struct pkt *pkt, uint8_t *buf, uint8_t len);
+void pkt_clone(struct pkt *src, struct pkt *dst);
 bool has_next(struct pkt *pkt);
 void next(struct pkt *pkt, struct pkt_entry *entry);
 
