@@ -9,6 +9,7 @@
 static const uint8_t INF = 255;
 
 static uint8_t self;
+static uint8_t buf[MAX_ROUTERS*2 + 1];
 
 static uint8_t next_hop[MAX_ROUTERS];
 static uint8_t dv[MAX_ROUTERS][MAX_ROUTERS];
@@ -41,17 +42,14 @@ void process_link_update(struct pkt *pkt)
   while(has_next(pkt)) {
     struct pkt_entry entry;
     next(pkt, &entry);
-
-    log_serial("%d\n", entry.node);
-    log_serial("%d\n", entry.cost);
     
     neighbors[count++] = entry.node;
 
-    if(entry.node + 1 >= num_routers) {
+    if(entry.node >= num_routers) {
       num_routers = entry.node + 1;
     }
 
-    dv[entry.node][self] = dv[self][entry.node] = entry.cost;
+    dv[self][entry.node] = entry.cost;
   }
 
   num_neighbors = count;
@@ -70,7 +68,7 @@ void process_dv_update(uint16_t from_address, struct pkt *pkt)
     struct pkt_entry entry;
     next(pkt, &entry);
 
-    if(entry.node + 1 >= num_routers) {
+    if(entry.node >= num_routers) {
       num_routers = entry.node + 1;
       changed = true;
     }
@@ -107,7 +105,7 @@ static bool bf()
     }
 
     changed = dv[self][dst] != best_cost;
-    dv[self][dst] = dv[dst][self] = best_cost;
+    dv[self][dst] = best_cost;
     next_hop[dst] = best_hop;
   }
 
@@ -116,10 +114,18 @@ static bool bf()
 
 static void update_neighbors()
 {
+  int idx = 0;
+  
+  buf[idx++] = num_routers;
+  for(int i = 0; i < num_routers; i++) {
+    buf[idx++] = i;
+    buf[idx++] = dv[self][i];
+  }
+  
   for(int i = 0; i < num_neighbors; i++) {
     struct xbee_data data;
-    data.buf = dv[self];
-    data.len = num_routers;
+    data.buf = buf;
+    data.len = 2*num_routers + 1;
     data.address = id_to_address(neighbors[i]);
 
     xbee_tx(&data);
