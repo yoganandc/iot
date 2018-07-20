@@ -41,17 +41,21 @@ void process_link_update(struct pkt *pkt)
   while(has_next(pkt)) {
     struct pkt_entry entry;
     next(pkt, &entry);
+
+    log_serial("%d\n", entry.node);
+    log_serial("%d\n", entry.cost);
+    
     neighbors[count++] = entry.node;
 
-    if(entry.node >= num_routers) {
-      num_routers = entry.node;
+    if(entry.node + 1 >= num_routers) {
+      num_routers = entry.node + 1;
     }
 
     dv[entry.node][self] = dv[self][entry.node] = entry.cost;
   }
 
   num_neighbors = count;
-  
+
   bf();
   update_neighbors();
   log_dv();
@@ -66,8 +70,8 @@ void process_dv_update(uint16_t from_address, struct pkt *pkt)
     struct pkt_entry entry;
     next(pkt, &entry);
 
-    if(entry.node >= num_routers) {
-      num_routers = entry.node;
+    if(entry.node + 1 >= num_routers) {
+      num_routers = entry.node + 1;
       changed = true;
     }
 
@@ -85,6 +89,10 @@ static bool bf()
   bool changed = false;
   
   for(int dst = 0; dst < num_routers; dst++) {
+    if(dst == self) {
+      continue;
+    }
+    
     uint8_t best_cost = INF;
     uint8_t best_hop;
 
@@ -121,22 +129,23 @@ static void update_neighbors()
 static void log_dv() 
 {
   log_serial("\n");
-  log_serial("    ");
+  log_serial("   ");
 
   for(int i = 0; i < num_routers; i++) {
-    log_serial(" | %2d", i);
+    log_serial(" | %3d", i);
   }
   log_serial("\n");
-  log_serial("----");
+  log_serial("---");
 
   for(int i = 0; i < num_routers; i++) {
-    log_serial("-----", i);
+    log_serial("------", i);
   }
+  log_serial("\n");
   
   for(int i = 0; i < num_routers; i++) {
-    log_serial("%2d ", i);
+    log_serial("%3d", i);
     for(int j = 0; j < num_routers; j++) {
-      log_serial(" | %2d", dv[i][j]);
+      log_serial(" | %3d", dv[i][j]);
     }
     log_serial("\n");
   }

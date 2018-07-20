@@ -18,6 +18,6 @@ void next(struct pkt *pkt, struct pkt_entry *entry)
 {
   entry->node = *(pkt->buf++);
   entry->cost = *(pkt->buf++);
-  pkt->pos <<= 1;
+  pkt->pos += 2;
 }
 

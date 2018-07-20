@@ -3,7 +3,6 @@
 import threading
 import queue
 import cmd
-import json
 from digi.xbee.devices import Raw802Device
 from digi.xbee.exception import XBeeException
 from digi.xbee.models.address import XBee16BitAddress
@@ -16,11 +15,17 @@ class Graph:
     """
     def __init__(self):
         self._graph = {
-            1: [[2, 60], [3, 1]],
-            2: [[1, 60], [3, 50]],
-            3: [[1, 1], [2, 50]]
+            0: [[1, 60], [2, 1]],
+            1: [[0, 60], [2, 50]],
+            2: [[0, 1], [1, 50]]
         }
+        self._paths = [[None for _ in range(len(self._graph))] for _ in range(len(self._graph))]
+        self._costs = [None for _ in range(len(self._graph))]
+        self._compute()
         self._lock = threading.Lock()
+        
+    def __len__(self):
+        return len(self._graph)
         
     def snapshot(self):
         ret = {}
@@ -36,6 +41,63 @@ class Graph:
             for edge in self._graph[src]:
                 if edge[0] == dest:
                     edge[1] = weight
+            
+            self._compute()
+                    
+    def path(self, src, dst):
+        return self._costs[src][dst], self._paths[src][dst]
+
+    def _djikstra(self, source):
+        n = len(self._graph)
+    
+        parent = [None for _ in range(n)]
+        dist = [INF for _ in range(n)]
+        dist[source] = 0
+    
+        completed = set()
+    
+        def delete_min():
+            min_dist = INF
+            lowest = -1
+        
+            for i in range(n):
+                if dist[i] < min_dist and i not in completed:
+                    min_dist = dist[i]
+                    lowest = i
+        
+            completed.add(lowest)
+            return lowest
+    
+        while len(completed) != n:
+            node = delete_min()
+        
+            for edge in self._graph[node]:
+                neighbor = edge[0]
+                weight = edge[1]
+            
+                if dist[neighbor] > dist[node] + weight:
+                    dist[neighbor] = dist[node] + weight
+                    parent[neighbor] = node
+    
+        return dist, parent
+    
+    def _compute(self):
+        for node in self._graph:
+            dist, parents = self._djikstra(node)
+            self._costs[node] = dist
+            
+            print("node =", node)
+            print("costs =", dist)
+            print("parents =", parents)
+            
+            for dst in self._graph:
+                path = [dst]
+                parent = parents[dst]  # type: int
+                while parent is not None:
+                    path.insert(0, parent)
+                    parent = parents[parent]
+                    
+                self._paths[node][dst] = path
 
 
 class XBeeTransmitter:
@@ -96,8 +158,8 @@ class XBeeTransmitter:
         
         pkt = bytearray(MSG_LINK.to_bytes(1, BYTEORDER))
         for edge in snapshot:
-            pkt += edge[0].to_bytes(2, BYTEORDER)
-            pkt += edge[1].to_bytes(2, BYTEORDER)
+            pkt += edge[0].to_bytes(1, BYTEORDER)
+            pkt += edge[1].to_bytes(1, BYTEORDER)
             
         try:
             self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS[to]), pkt)
@@ -193,12 +255,18 @@ class Prompt(cmd.Cmd):
     prompt = '> '
 
     def do_update(self, arg):
-        """Update edge from weight from src dst: update 1 2 50"""
+        """Update edge from weight from src to dst: update 1 2 50"""
         try:
             args = arg.split()
             src = int(args[0])
             dst = int(args[1])
             weight = int(args[2])
+            
+            if src < 0 or src > len(self._graph) or dst < 0 or dst > len(self._graph):
+                raise ValueError
+            
+            if weight < 0 or weight >= INF:
+                raise ValueError
             
         except (ValueError, IndexError):
             print("unable to parse input")
@@ -213,7 +281,26 @@ class Prompt(cmd.Cmd):
         snapshot = self._graph.snapshot()
         for node in snapshot:
             print(str(node) + ": ", end='')
-            print(json.dumps(snapshot[node]))
+            print(snapshot[node])
+        return False
+    
+    def do_path(self, arg):
+        """Get shortest path and cost from src to dst: path 1 2"""
+        try:
+            args = arg.split()
+            src = int(args[0])
+            dst = int(args[1])
+
+            if src < 0 or src > len(self._graph) or dst < 0 or dst > len(self._graph):
+                raise ValueError
+
+        except (ValueError, IndexError):
+            print("unable to parse input")
+            return False
+        
+        cost, path = self._graph.path(src, dst)
+        print("Cost:", cost)
+        print("Path:", path)
         return False
     
     @staticmethod

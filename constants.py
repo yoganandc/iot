@@ -4,9 +4,6 @@ MSG_DV = 2
 UPDATE_INTERVAL = 5.0
 PORT = "/dev/ttyS8"
 BAUD = 9600
+INF = 255
 
-ADDRESS = {
-    1: "5678",
-    2: "90AB",
-    3: "CDEF"
-}
+ADDRESS = ["5678", "90AB", "CDEF", "1011"]

@@ -57,10 +57,12 @@ void do_xbee_read()
   
     if(pkt.type == MSG_LINK) {
       Serial.println(F("Recieved LINK message"));
+      Serial.flush();
       process_link_update(&pkt);
     }
     else {
       Serial.println(F("Received DV message"));
+      Serial.flush();
       process_dv_update(data.address, &pkt);
     }
   }
@@ -69,4 +71,3 @@ void do_xbee_read()
 void do_lcd_update() 
 {
 }
-
