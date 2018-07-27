@@ -15,9 +15,19 @@ class Graph:
     """
     def __init__(self):
         self._graph = {
-            0: [[1, 60], [2, 1]],
-            1: [[0, 60], [2, 50]],
-            2: [[0, 1], [1, 50]]
+            0: [[8, 8, NORTH], [1, 10, EAST], [2, 8, SOUTH], [9, 24, WEST]],
+            1: [[7, 2, NORTH], [6, 15, EAST], [3, 52, SOUTH], [0, 10, WEST]],
+            2: [[0, 8, NORTH], [3, 22, EAST], [4, 60, SOUTH], [10, 17, WEST]],
+            3: [[1, 52, NORTH], [5, 7, EAST], [4, 13, SOUTH], [2, 22, WEST]],
+            4: [[2, 60, NORTH], [3, 13, EAST], [12, 11, SOUTH], [11, 23, WEST]],
+            5: [[3, 7, WEST]],
+            6: [[1, 15, WEST]],
+            7: [[1, 2, SOUTH]],
+            8: [[0, 8, SOUTH]],
+            9: [[0, 24, EAST]],
+            10: [[2, 17, EAST]],
+            11: [[4, 23, EAST]],
+            12: [[4, 11, NORTH]]
         }
         self._paths = [[None for _ in range(len(self._graph))] for _ in range(len(self._graph))]
         self._costs = [None for _ in range(len(self._graph))]
@@ -201,10 +211,10 @@ class XBeeDaemon:
     def start(self):
         self._rx.start()
         self._tx.start()
-        self._timer.start()
+        # self._timer.start()
     
     def stop(self):
-        self._timer.stop()
+        # self._timer.stop()
         self._tx.stop()
         self._rx.stop()
 
