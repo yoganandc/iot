@@ -13,14 +13,14 @@ static uint8_t buf[MAX_ROUTERS*2 + 1];
 
 static uint8_t next_hop[MAX_ROUTERS];
 static uint8_t dv[MAX_ROUTERS][MAX_ROUTERS];
-static uint8_t neighbors[MAX_ROUTERS];
+static uint8_t neighbors[MAX_NEIGHBORS]; 
+static uint8_t neighbor_dirs[MAX_NEIGHBORS];
 
-static uint8_t num_neighbors; // for dv and next_hop
-static uint8_t num_routers; // for neighbors
+static uint8_t num_neighbors;
+static uint8_t num_routers;
 
 static bool bf();
 static void update_neighbors();
-static void log_dv();
 
 void router_init(uint16_t node_address) 
 {
@@ -43,20 +43,20 @@ void process_link_update(struct pkt *pkt)
     struct pkt_entry entry;
     next(pkt, &entry);
     
-    neighbors[count++] = entry.node;
+    neighbors[count] = entry.node;
+    neighbor_dirs[count++] = entry.dir;
 
     if(entry.node >= num_routers) {
       num_routers = entry.node + 1;
     }
 
-    dv[self][entry.node] = entry.cost;
+    dv[self][entry.node] = dv[entry.node][self] = entry.cost;
   }
 
   num_neighbors = count;
 
   bf();
   update_neighbors();
-  log_dv();
 }
 
 void process_dv_update(uint16_t from_address, struct pkt *pkt)
@@ -78,7 +78,6 @@ void process_dv_update(uint16_t from_address, struct pkt *pkt)
 
   if(bf() || changed) {
     update_neighbors();
-    log_dv();
   }
 }
 
@@ -128,13 +127,26 @@ static void update_neighbors()
     data.len = 2*num_routers + 1;
     data.address = id_to_address(neighbors[i]);
 
-    xbee_tx(&data);
+    if(data.address) {
+      xbee_tx(&data);
+    }
   }
 }
 
-static void log_dv() 
+void router_log() 
 {
-  log_serial("\n");
+  static char *dirs[] = {"NORTH", "EAST", "SOUTH", "WEST"};
+
+  if(num_routers < 1) {
+    return;
+  }
+  
+  log_serial("\nNeighbors\n");
+  for(int i = 0; i < num_neighbors; i++) {
+    log_serial("id: %2d, cost: %2d, dir: %s\n", neighbors[i], dv[self][neighbors[i]], dirs[neighbor_dirs[i]]);
+  }
+  
+  log_serial("\nRouting Table\n");
   log_serial("   ");
 
   for(int i = 0; i < num_routers; i++) {

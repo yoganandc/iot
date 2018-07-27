@@ -43,7 +43,7 @@ class Graph:
             for node in self._graph:
                 ret[node] = []
                 for edge in self._graph[node]:
-                    ret[node].append([edge[0], edge[1]])
+                    ret[node].append([edge[0], edge[1], edge[2]])
         return ret
     
     def update(self, src, dest, weight):
@@ -95,10 +95,6 @@ class Graph:
         for node in self._graph:
             dist, parents = self._djikstra(node)
             self._costs[node] = dist
-            
-            print("node =", node)
-            print("costs =", dist)
-            print("parents =", parents)
             
             for dst in self._graph:
                 path = [dst]
@@ -164,12 +160,16 @@ class XBeeTransmitter:
         
     def _send_link_update(self, msg):
         to = msg[0]
+        if to >= len(ADDRESS):  # don't send to nodes that don't have addresses
+            return
+        
         snapshot = msg[1]
         
         pkt = bytearray(MSG_LINK.to_bytes(1, BYTEORDER))
         for edge in snapshot:
             pkt += edge[0].to_bytes(1, BYTEORDER)
             pkt += edge[1].to_bytes(1, BYTEORDER)
+            pkt += edge[2].to_bytes(1, BYTEORDER)
             
         try:
             self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS[to]), pkt)
@@ -211,10 +211,10 @@ class XBeeDaemon:
     def start(self):
         self._rx.start()
         self._tx.start()
-        # self._timer.start()
+        self._timer.start()
     
     def stop(self):
-        # self._timer.stop()
+        self._timer.stop()
         self._tx.stop()
         self._rx.stop()
 

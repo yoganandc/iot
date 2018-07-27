@@ -4,11 +4,13 @@
 #include "router.h"
 #include "rx_tx.h"
 
-#define XBEE_READ_CYCLE 200U
+#define XBEE_READ_CYCLE 50U
 #define LCD_UPDATE_CYCLE 1000U
+#define LOG_CYCLE 5000U
 
 unsigned long last_xbee_read = 0;
 unsigned long last_lcd_updated = 0;
+unsigned long last_logged = 0;
 
 void setup() 
 {
@@ -33,6 +35,9 @@ void loop()
   }
   if(check(&last_lcd_updated, LCD_UPDATE_CYCLE)) {
     do_lcd_update();
+  }
+  if(check(&last_logged, LOG_CYCLE)) {
+    router_log();
   }
 }
 

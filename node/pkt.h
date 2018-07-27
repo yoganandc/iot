@@ -22,6 +22,7 @@ struct pkt {
 struct pkt_entry {
   uint8_t node;
   uint8_t cost;
+  uint8_t dir; // unused for MSG_DV
 };
 
 void pkt_init(struct pkt *pkt, uint8_t *buf, uint8_t len);

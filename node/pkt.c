@@ -16,8 +16,16 @@ bool has_next(struct pkt *pkt)
 
 void next(struct pkt *pkt, struct pkt_entry *entry)
 {
-  entry->node = *(pkt->buf++);
-  entry->cost = *(pkt->buf++);
-  pkt->pos += 2;
+  if(pkt->type == MSG_LINK) {
+    entry->node = *(pkt->buf++);
+    entry->cost = *(pkt->buf++);
+    entry->dir = *(pkt->buf++);
+    pkt->pos += 3;
+  }
+  else {
+    entry->node = *(pkt->buf++);
+    entry->cost = *(pkt->buf++);
+    pkt->pos += 2;
+  }
 }
 
