@@ -2,6 +2,10 @@
 #define LOGGER_H
 
 #ifdef __cplusplus
+
+#include "WString.h"
+void log_serial(const __FlashStringHelper *format, ...);
+
 extern "C"
 {
 #endif

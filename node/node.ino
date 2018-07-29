@@ -4,7 +4,6 @@
 #include "router.h"
 #include "rx_tx.h"
 #include "logger.h"
-#include "logger_flash.h"
 
 #define XBEE_READ_CYCLE 50U
 #define LCD_UPDATE_CYCLE 1000U

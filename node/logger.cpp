@@ -3,7 +3,6 @@
 #include "Arduino.h"
 #include "WString.h"
 #include "logger.h"
-#include "logger_flash.h"
 
 static bool connected;
 
