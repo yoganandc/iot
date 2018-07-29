@@ -4,13 +4,22 @@
 #include <stdbool.h>
 #include "rx_tx.h"
 
-static SoftwareSerial xbee_serial(2, 3);
 static XBee xbee;
 
-void xbee_init() 
+void xbee_init(bool uart) 
 {
-  xbee_serial.begin(9600);
-  xbee.setSerial(xbee_serial);
+  static SoftwareSerial soft_serial(2, 3);
+  Stream *xbee_serial;
+
+  if(uart) {
+    xbee_serial = &Serial;
+  }
+  else {
+    soft_serial.begin(9600);
+    xbee_serial = &soft_serial;
+  }
+  
+  xbee.setSerial(*xbee_serial);
   delay(5000);
 }
 
