@@ -5,6 +5,7 @@
 #include "rx_tx.h"
 #include "logger.h"
 #include "router_util.h"
+#include "lcd.h"
 
 static const uint8_t INF = 255;
 
@@ -145,6 +146,13 @@ void router_log()
   for(int i = 0; i < num_neighbors; i++) {
     log_serial("id: %2d, cost: %2d, dir: %s\n", neighbors[i], dv[self][neighbors[i]], dirs[neighbor_dirs[i]]);
   }
+
+  log_serial("\nNext Hop\n");
+  log_serial("%d: %d", 0, next_hop[0]);
+  for(int i = 1; i < num_routers; i++) {
+    log_serial(", %d: %d", i, next_hop[i]);
+  }
+  log_serial("\n");
   
   log_serial("\nRouting Table\n");
   log_serial("   ");
@@ -168,5 +176,10 @@ void router_log()
     log_serial("\n");
   }
   log_serial("\n");
+}
+
+void router_lcd()
+{
+  lcd_tabulate(dv[self], next_hop, num_routers);
 }
 

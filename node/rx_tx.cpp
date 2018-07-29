@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "rx_tx.h"
 
-static XBee xbee;
+static XBee *xbee;
 
 void xbee_init(bool uart) 
 {
@@ -18,8 +18,11 @@ void xbee_init(bool uart)
     soft_serial.begin(9600);
     xbee_serial = &soft_serial;
   }
+
+  static XBee xbee0;
+  xbee = &xbee0;
   
-  xbee.setSerial(*xbee_serial);
+  xbee->setSerial(*xbee_serial);
   delay(5000);
 }
 
@@ -27,13 +30,13 @@ bool xbee_address(uint16_t *address)
 {
   uint8_t command[] = {'M', 'Y'};
   AtCommandRequest req(command);
-  xbee.send(req);
+  xbee->send(req);
 
-  if(xbee.readPacket(5000)) {
-    if(xbee.getResponse().getApiId() == AT_COMMAND_RESPONSE) {
+  if(xbee->readPacket(5000)) {
+    if(xbee->getResponse().getApiId() == AT_COMMAND_RESPONSE) {
       
       AtCommandResponse res;
-      xbee.getResponse().getAtCommandResponse(res);
+      xbee->getResponse().getAtCommandResponse(res);
 
       if(res.isOk()) {
         if(res.getValueLength() == 2) {
@@ -51,11 +54,11 @@ bool xbee_address(uint16_t *address)
 bool xbee_rx(struct xbee_data *data) 
 {
   Rx16Response rx16 = Rx16Response();
-  xbee.readPacket();
+  xbee->readPacket();
   
-  if(xbee.getResponse().isAvailable()) {
-    if(xbee.getResponse().getApiId() == RX_16_RESPONSE) {
-      xbee.getResponse().getRx16Response(rx16);
+  if(xbee->getResponse().isAvailable()) {
+    if(xbee->getResponse().getApiId() == RX_16_RESPONSE) {
+      xbee->getResponse().getRx16Response(rx16);
       data->buf = rx16.getData();
       data->len = rx16.getDataLength();
       data->address = rx16.getRemoteAddress16();
@@ -69,6 +72,6 @@ bool xbee_rx(struct xbee_data *data)
 void xbee_tx(struct xbee_data *data) 
 {
   Tx16Request tx16 = Tx16Request(data->address, data->buf, data->len);
-  xbee.send(tx16);
+  xbee->send(tx16);
 }
 
