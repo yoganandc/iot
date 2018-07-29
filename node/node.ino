@@ -14,6 +14,8 @@
 #define LCD_V0 5
 #define LCD_CONTRAST 0.1
 
+static unsigned long max_time = 0;
+
 void setup() 
 {
   Serial.begin(9600);
@@ -40,7 +42,6 @@ void loop()
   static unsigned long last_xbee_read = 0;
   static unsigned long last_lcd_updated = 0;
   static unsigned long last_logged = 0;
-  static unsigned long max_time = 0;
   
   if(check(&last_xbee_read, XBEE_READ_CYCLE)) {
     unsigned long start_time = millis();
@@ -57,7 +58,6 @@ void loop()
   
   if(check(&last_logged, LOG_CYCLE)) {
     router_log();
-    log_serial(F("Max time for xbee handler: %ul\n"), max_time);
   }
 }
 
@@ -93,5 +93,12 @@ void do_xbee_read()
 
 void do_lcd_update() 
 {
-  router_lcd();
+  static bool state = false;
+  if(state) {
+    router_lcd();
+  }
+  else {
+    lcd_msg(F("Max time: %ul"), max_time);
+  }
+  state = !state;
 }

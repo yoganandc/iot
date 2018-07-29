@@ -3,6 +3,7 @@
 import threading
 import queue
 import cmd
+import time
 from digi.xbee.devices import Raw802Device
 from digi.xbee.exception import XBeeException
 from digi.xbee.models.address import XBee16BitAddress
@@ -171,10 +172,15 @@ class XBeeTransmitter:
             pkt += edge[1].to_bytes(1, BYTEORDER)
             pkt += edge[2].to_bytes(1, BYTEORDER)
             
-        try:
-            self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS[to]), pkt)
-        except XBeeException:
-            pass
+        def delayed_send():
+            delay = to * UPDATE_INTERVAL / len(ADDRESS)
+            time.sleep(delay)
+            try:
+                self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS[to]), pkt)
+            except XBeeException:
+                pass
+            
+        threading.Thread(target=delayed_send).start()
         
         
 class XBeeReceiver:

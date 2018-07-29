@@ -62,6 +62,28 @@ void lcd_status()
   
 }
 
+void lcd_msg(const __FlashStringHelper *format, ...)
+{
+  lcd->clear();
+  lcd->home();
+  
+  va_list ap;
+  va_start(ap, format);
+  lcd->vprintf(format, ap);
+  va_end(ap);
+}
+
+void lcd_msg(const char *format, ...)
+{
+  lcd->clear();
+  lcd->home();
+  
+  va_list ap;
+  va_start(ap, format);
+  lcd->vprintf(format, ap);
+  va_end(ap);
+}
+
 static void lcd_printf(const char *format, ...)
 {
   va_list ap;
