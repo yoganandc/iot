@@ -180,6 +180,6 @@ void router_log()
 
 void router_lcd()
 {
-  lcd_tabulate(dv[self], next_hop, num_routers);
+  lcd_tabulate(dv[self], next_hop, num_routers, self);
 }
 

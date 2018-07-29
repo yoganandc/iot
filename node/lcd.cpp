@@ -24,43 +24,34 @@ void lcd_init()
   lcd = &lcd0;
 
   lcd->begin(20, 4);
-
-  for(int i = 0; i < NUM_NODES; i++) {
-    int row = i % 4;
-    int col = (i/4) * 7;
-    lcd->setCursor(col, row);
-
-    lcd->print(i + 1, HEX);
-    if(col == 14) {
-      lcd->print(F("|?|FF"));
-    }
-    else {
-      lcd->print(F("|?|FF "));
-    }
-  }
+  lcd_printf(F("Starting up..."));
 }
 
-void lcd_tabulate(uint8_t *costs, uint8_t *next_hops, uint8_t num)
+void lcd_tabulate(uint8_t *costs, uint8_t *next_hops, uint8_t num, uint8_t skip)
 {
+  bool skipped = false;
+  
   for(int i = 0; i < NUM_NODES; i++) {
-    int row = i % 4;
-    int col = (i/4) * 7;
-    lcd->setCursor(col, row);
-
-    if(col == 14) {
-      if(i < num) {
-        lcd_printf(F("%1X|%1X|%02X"), i + 1, next_hops[i], costs[i]);
+    lcd->setCursor((i/4) * 7, i % 4);
+    
+    if(i == skip) {
+      skipped = true;
+    }
+    
+    if(i > 7) { // last col
+      if(i < num && costs[i + skipped] < 0xFF) {
+        lcd_printf(F("%1X|%1X|%02X"), i + skipped, next_hops[i + skipped], costs[i + skipped]);
       }
       else {
-        lcd_printf(F("%1X|?|FF"), i + 1);
+        lcd_printf(F("%1X|?|FF"), i + skipped);
       }
     }
     else {
-      if(i < num) {
-        lcd_printf(F("%1X|%1X|%02X "), i + 1, next_hops[i], costs[i]);
+      if(i < num && costs[i + skipped] < 0xFF) {
+        lcd_printf(F("%1X|%1X|%02X "), i + skipped, next_hops[i + skipped], costs[i + skipped]);
       }
       else {
-        lcd_printf(F("%1X|?|FF "), i + 1);
+        lcd_printf(F("%1X|?|FF "), i + skipped);
       }
     }
   }

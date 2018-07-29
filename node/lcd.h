@@ -9,7 +9,7 @@ extern "C"
 #include <stdint.h>
 
 void lcd_init();
-void lcd_tabulate(uint8_t *costs, uint8_t *next_hops, uint8_t num);
+void lcd_tabulate(uint8_t *costs, uint8_t *next_hops, uint8_t num, uint8_t skip);
 void lcd_status();
 
 #ifdef __cplusplus
