@@ -1,10 +1,10 @@
 #include <LiquidCrystal.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <logger.h>
 #include "Arduino.h"
 #include "WString.h"
 #include "lcd.h"
-#include "logger.h"
 
 #define V0 5
 #define CONTRAST 0.9

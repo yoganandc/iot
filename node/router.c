@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <logger.h>
+#include <rx_tx.h>
 #include "router.h"
 #include "pkt.h"
-#include "rx_tx.h"
-#include "logger.h"
 #include "router_util.h"
 #include "lcd.h"
 

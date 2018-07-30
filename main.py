@@ -146,9 +146,13 @@ class XBeeTransmitter:
     def send_link_update(self, to, snapshot):
         self._q.put((MSG_LINK, (to, snapshot)))
         
+    def send_dst(self, dst):
+        self._q.put((MSG_DST, dst))
+        
     def _dispatch(self):
         dispatch_table = {
-            MSG_LINK: self._send_link_update
+            MSG_LINK: self._send_link_update,
+            MSG_DST: self._send_dst
         }
         
         while not self._stop_flag:
@@ -182,7 +186,15 @@ class XBeeTransmitter:
             
         threading.Thread(target=delayed_send).start()
         
-        
+    def _send_dst(self, msg):
+        pkt = bytearray(MSG_DST.to_bytes(1, BYTEORDER))
+        pkt += msg.to_bytes(1, BYTEORDER)
+        try:
+            self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS_CAR), pkt)
+        except XBeeException:
+            pass
+
+
 class XBeeReceiver:
     """
     polls xbee to see if messages have been received and dumps to log
@@ -223,6 +235,9 @@ class XBeeDaemon:
         self._timer.stop()
         self._tx.stop()
         self._rx.stop()
+        
+    def send_dst(self, dst):
+        self._tx.send_dst(dst)
 
 
 class RepeatingTimer:
@@ -263,9 +278,10 @@ class Prompt(cmd.Cmd):
     """
     Server is wrapped in a prompt that accepts commands to interact with the graph
     """
-    def __init__(self, graph):
+    def __init__(self, graph, daemon):
         super().__init__()
         self._graph = graph
+        self._daemon = daemon
         
     intro = 'Welcome to the traffic manager shell. Type help or ? to list commands.\n'
     prompt = '> '
@@ -307,7 +323,7 @@ class Prompt(cmd.Cmd):
             src = int(args[0])
             dst = int(args[1])
 
-            if src < 0 or src > len(self._graph) or dst < 0 or dst > len(self._graph):
+            if src < 0 or src >= len(self._graph) or dst < 0 or dst >= len(self._graph):
                 raise ValueError
 
         except (ValueError, IndexError):
@@ -317,6 +333,22 @@ class Prompt(cmd.Cmd):
         cost, path = self._graph.path(src, dst)
         print("Cost:", cost)
         print("Path:", path)
+        return False
+    
+    def do_dst(self, arg):
+        """Update the car's destination"""
+        try:
+            dst = int(arg)
+            
+            # Keep dst to terminal nodes for now
+            if dst < len(ADDRESS) or dst >= len(self._graph):
+                raise ValueError
+
+        except (ValueError, IndexError):
+            print("unable to parse input")
+            return False
+        
+        self._daemon.send_dst(dst)
         return False
     
     @staticmethod
@@ -336,7 +368,7 @@ def main():
     
     try:
         daemon.start()
-        Prompt(graph).cmdloop()
+        Prompt(graph, daemon).cmdloop()
     finally:
         daemon.stop()
         xbee.close()

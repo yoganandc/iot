@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <logger.h>
+#include <rx_tx.h>
 #include "pkt.h"
 #include "router.h"
-#include "rx_tx.h"
-#include "logger.h"
 #include "lcd.h"
 
 #define XBEE_READ_CYCLE 50U
@@ -84,7 +84,7 @@ void do_xbee_read()
       log_serial(F("Recieved LINK message\n"));
       process_link_update(&pkt);
     }
-    else {
+    else if(pkt.type == MSG_DV) {
       log_serial(F("Received DV message from 0x%X\n"), data.address);
       process_dv_update(data.address, &pkt);
     }
