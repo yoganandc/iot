@@ -1,28 +1,16 @@
 #include <XBee.h>
-#include <SoftwareSerial.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "rx_tx.h"
 
 static XBee *xbee;
 
-void xbee_init(bool uart) 
+void xbee_init() 
 {
-  static SoftwareSerial soft_serial(2, 3);
-  Stream *xbee_serial;
-
-  if(uart) {
-    xbee_serial = &Serial;
-  }
-  else {
-    soft_serial.begin(9600);
-    xbee_serial = &soft_serial;
-  }
-
   static XBee xbee0;
   xbee = &xbee0;
   
-  xbee->setSerial(*xbee_serial);
+  xbee->setSerial(Serial);
   delay(5000);
 }
 

@@ -15,7 +15,7 @@ struct xbee_data {
   uint16_t address;
 };
 
-void xbee_init(bool uart);
+void xbee_init();
 bool xbee_address(uint16_t *address);
 bool xbee_rx(struct xbee_data *);
 void xbee_tx(struct xbee_data *);

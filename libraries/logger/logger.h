@@ -12,7 +12,11 @@ extern "C"
 
 #include <stdbool.h>
 
-void log_init(bool connected);
+#define LOG_NONE 0
+#define LOG_UART 1
+#define LOG_SOFT 2
+
+void log_init(int type);
 void log_serial(const char *format, ...);
 
 #ifdef __cplusplus

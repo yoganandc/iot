@@ -10,9 +10,7 @@
 #define LCD_UPDATE_CYCLE 2000U
 #define LOG_CYCLE 5000U
 
-#define SERIAL_SELECT 4
-#define LCD_V0 5
-#define LCD_CONTRAST 0.1
+#define SOFT_SERIAL 4
 
 static unsigned long max_time = 0;
 
@@ -20,13 +18,20 @@ void setup()
 {
   Serial.begin(9600);
   
-  pinMode(SERIAL_SELECT, INPUT_PULLUP);
-  bool xbee_uses_uart = digitalRead(SERIAL_SELECT);
-  log_init(!xbee_uses_uart); // if xbee uses uart, then the logger can't
+  pinMode(SOFT_SERIAL, INPUT_PULLUP);
+  bool use_soft_serial = digitalRead(SOFT_SERIAL);
+
+  if(use_soft_serial) {
+    log_init(LOG_SOFT);
+  }
+  else {
+    log_init(LOG_NONE);
+  }
+  
   lcd_init();
   
   log_serial(F("Booting... "));
-  xbee_init(xbee_uses_uart);
+  xbee_init();
   log_serial(F("Done\n"));
   
   log_serial(F("Retrieving node ID... "));
