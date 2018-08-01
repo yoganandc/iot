@@ -13,19 +13,21 @@
 #define SOFT_SERIAL 4
 
 static unsigned long max_time = 0;
+bool use_soft_serial;
 
 void setup() 
 {
   Serial.begin(9600);
   
   pinMode(SOFT_SERIAL, INPUT_PULLUP);
-  bool use_soft_serial = digitalRead(SOFT_SERIAL);
+  bool dont_use_soft_serial = digitalRead(SOFT_SERIAL);
+  use_soft_serial = !dont_use_soft_serial;
 
-  if(use_soft_serial) {
-    log_init(LOG_SOFT);
+  if(dont_use_soft_serial) {
+    log_init(LOG_NONE);
   }
   else {
-    log_init(LOG_NONE);
+    log_init(LOG_SOFT);
   }
   
   lcd_init();
@@ -103,7 +105,7 @@ void do_lcd_update()
     router_lcd();
   }
   else {
-    lcd_msg(F("Max time: %ul"), max_time);
+    lcd_msg(F("Max time: %ul\nSoft Serial Enabled? %d"), max_time, use_soft_serial);
   }
   state = !state;
 }

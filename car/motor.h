@@ -6,12 +6,12 @@ extern "C"
 {
 #endif
 
-#define PWM_A 3
-#define PWM_B 11
-#define DIR_A 2
-#define DIR_B 4
-
 void motor_init();
+void motor_calibrate();
+void motor_go();
+void motor_left();
+void motor_right();
+void motor_180();
 
 #ifdef __cplusplus
 }

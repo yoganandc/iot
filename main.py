@@ -192,6 +192,7 @@ class XBeeTransmitter:
         try:
             self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS_CAR), pkt)
         except XBeeException:
+            print('XBeeException')
             pass
 
 
