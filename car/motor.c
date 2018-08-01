@@ -33,14 +33,14 @@ void motor_init()
 
 void motor_calibrate()
 { 
-  for(int i = 1; i <= 100; i++) { // timeout*100 = 2.5s
-    if(i == 1 || i == 60) {
+  set_speed(SPEED_CAL);
+  
+  for(int i = 0; i <= 100; i++) { // timeout*100 = 2.5s
+    if(i == 0 || i == 60) {
       set_dir(RIGHT);
-      set_speed(SPEED_CAL);
     }
     else if(i == 20 || i == 100) {
       set_dir(LEFT);
-      set_speed(SPEED_CAL);
     }
     sensor_calibrate();
   }
