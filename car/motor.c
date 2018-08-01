@@ -17,8 +17,8 @@
 
 static void set_dir(int);
 static void set_speed(int);
-static void stop_left();
-static void stop_right();
+static void finish_left();
+static void finish_right();
 
 void motor_init()
 {
@@ -45,7 +45,7 @@ void motor_calibrate()
     sensor_calibrate();
   }
 
-  stop_left();
+  finish_left();
 }
 
 void motor_go()
@@ -57,12 +57,14 @@ void motor_left()
 {
   set_dir(LEFT);
   set_speed(SPEED_TURN);
+  finish_left();
 }
 
 void motor_right()
 {
   set_dir(RIGHT);
   set_speed(SPEED_TURN);
+  finish_left();
 }
 
 void motor_180()
@@ -82,7 +84,7 @@ static void set_speed(int speed)
   analogWrite(PWM_B, speed);
 }
 
-static void stop_left()
+static void finish_left()
 {
   sensor_read();
   unsigned int *values = sensor_values();
@@ -104,7 +106,7 @@ static void stop_left()
   analogWrite(PWM_A, 0);
 }
 
-static void stop_right()
+static void finish_right()
 {
   sensor_read();
   unsigned int *values = sensor_values();
