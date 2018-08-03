@@ -1,0 +1,9 @@
+[submodule "libraries/xbee-arduino"]
+	path = libraries/xbee-arduino
+	url = https://github.com/andrewrapp/xbee-arduino
+[submodule "libraries/qtrsensors"]
+	path = libraries/qtrsensors
+	url = https://github.com/pololu/qtr-sensors-arduino
+[submodule "libraries/altsoftserial"]
+	path = libraries/altsoftserial
+	url = https://github.com/PaulStoffregen/AltSoftSerial
