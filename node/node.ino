@@ -13,7 +13,6 @@
 #define SOFT_SERIAL 4
 
 static unsigned long max_time = 0;
-bool use_soft_serial;
 
 void setup() 
 {
@@ -21,7 +20,6 @@ void setup()
   
   pinMode(SOFT_SERIAL, INPUT_PULLUP);
   bool dont_use_soft_serial = digitalRead(SOFT_SERIAL);
-  use_soft_serial = !dont_use_soft_serial;
 
   if(dont_use_soft_serial) {
     log_init(LOG_NONE);
@@ -51,16 +49,11 @@ void loop()
   static unsigned long last_logged = 0;
   
   if(check(&last_xbee_read, XBEE_READ_CYCLE)) {
-    unsigned long start_time = millis();
     do_xbee_read();
-    unsigned long stop_time = millis();
-    if(max_time < stop_time - start_time) {
-      max_time = stop_time - start_time;
-    }
   }
   
   if(check(&last_lcd_updated, LCD_UPDATE_CYCLE)) {
-    do_lcd_update();
+    router_lcd();
   }
   
   if(check(&last_logged, LOG_CYCLE)) {
@@ -98,14 +91,3 @@ void do_xbee_read()
   }
 }
 
-void do_lcd_update() 
-{
-  static bool state = false;
-  if(state) {
-    router_lcd();
-  }
-  else {
-    lcd_msg(F("Max time: %ul\nSoft Serial Enabled? %d"), max_time, use_soft_serial);
-  }
-  state = !state;
-}

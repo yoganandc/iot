@@ -16,6 +16,7 @@ static uint8_t next_hop[MAX_ROUTERS];
 static uint8_t dv[MAX_ROUTERS][MAX_ROUTERS];
 static uint8_t neighbors[MAX_NEIGHBORS]; 
 static uint8_t neighbor_dirs[MAX_NEIGHBORS];
+static uint8_t neighbor_costs[MAX_NEIGHBORS];
 
 static uint8_t num_neighbors;
 static uint8_t num_routers;
@@ -33,6 +34,10 @@ void router_init(uint16_t node_address)
     }
   }
 
+  for(int i = 0; i < MAX_NEIGHBORS; i++) {
+    neighbor_costs[i] = INF;
+  }
+
   self = address_to_id(node_address);
 }
 
@@ -45,13 +50,12 @@ void process_link_update(struct pkt *pkt)
     next(pkt, &entry);
     
     neighbors[count] = entry.node;
-    neighbor_dirs[count++] = entry.dir;
+    neighbor_dirs[count] = entry.dir;
+    neighbor_costs[count++] = entry.cost;
 
     if(entry.node >= num_routers) {
       num_routers = entry.node + 1;
     }
-
-    dv[self][entry.node] = dv[entry.node][self] = entry.cost;
   }
 
   num_neighbors = count;
@@ -69,12 +73,12 @@ void process_dv_update(uint16_t from_address, struct pkt *pkt)
     struct pkt_entry entry;
     next(pkt, &entry);
 
+     dv[from][entry.node] = entry.cost;
+
     if(entry.node >= num_routers) {
       num_routers = entry.node + 1;
       changed = true;
     }
-
-    dv[from][entry.node] = entry.cost;
   }
 
   if(bf() || changed) {
@@ -96,7 +100,7 @@ static bool bf()
 
     for(int j = 0; j < num_neighbors; j++) {
       int neighbor = neighbors[j];
-      int curr = dv[self][neighbor] + dv[neighbor][dst];
+      int curr = neighbor_costs[j] + dv[neighbor][dst];
 
       if(curr < best_cost) {
         best_cost = curr;
@@ -116,7 +120,7 @@ static void update_neighbors()
 {
   int idx = 0;
   
-  buf[idx++] = num_routers;
+  buf[idx++] = MSG_DV;
   for(int i = 0; i < num_routers; i++) {
     buf[idx++] = i;
     buf[idx++] = dv[self][i];
