@@ -1,4 +1,4 @@
-#include "Arduino.h"
+#include <Arduino.h>
 #include "motor.h"
 #include "sensor.h"
 #include "logger.h"
@@ -12,7 +12,7 @@
 #define SPEED_SLOW 100
 #define SPEED_CAL  140
 
-#define KP 0.005
+#define KP 0.025
 
 #define CORRECTION_LIMIT 85
 
@@ -23,6 +23,7 @@ static void set_dir(int);
 static void set_speed(int);
 static void finish_left();
 static void finish_right();
+static bool detect();
 
 void motor_init()
 {
@@ -52,49 +53,45 @@ void motor_calibrate()
   finish_left();
 }
 
-void motor_go()
+bool motor_go()
 {
-  sensor_read();
-  unsigned int pos = sensor_position();
-
-  switch(pos) {
-    case 0: {
-      set_speed(SPEED);
-      set_dir(RIGHT);
-      log_serial("RIGHT\n");
-      break;
-    }
+  while(1) {
+    sensor_read();
+    unsigned int pos = sensor_position();
   
-    case 7000: {
-      set_speed(SPEED);
-      set_dir(LEFT);
-      log_serial("LEFT\n"); 
-      break;
-    }
-  
-    default: {
-      double correction = KP * ((int) pos - 3500);
-  
-      if(correction > CORRECTION_LIMIT) {
-        correction = CORRECTION_LIMIT;
+    switch(pos) {
+      case 0: {
+        set_speed(0);
+        return detect();
       }
-      if(correction < -CORRECTION_LIMIT) {
-        correction = -CORRECTION_LIMIT;
-      }
-      
-      int m1 = SPEED - correction;
-      int m2 = SPEED + correction;
     
-      digitalWrite(DIR_A, LOW);
-      analogWrite(PWM_A, m1);
-      digitalWrite(DIR_B, LOW);
-      analogWrite(PWM_B, m2);
-
-      log_serial("pwm_a = %d pwm_b = %d\n", m1, m2);
+      case 7000: {
+        set_speed(0);
+        return detect();
+      }
+    
+      default: {
+        double correction = KP * ((int) pos - 3500);
+    
+        if(correction > CORRECTION_LIMIT) {
+          correction = CORRECTION_LIMIT;
+        }
+        if(correction < -CORRECTION_LIMIT) {
+          correction = -CORRECTION_LIMIT;
+        }
+        
+        int m1 = SPEED - correction;
+        int m2 = SPEED + correction;
+      
+        digitalWrite(DIR_A, LOW);
+        analogWrite(PWM_A, m1);
+        digitalWrite(DIR_B, LOW);
+        analogWrite(PWM_B, m2);
+      }
     }
+  
+    delay(10);
   }
-
-  delay(10);
 }
 
 void motor_left()
@@ -108,7 +105,7 @@ void motor_right()
 {
   set_dir(RIGHT);
   set_speed(SPEED);
-  finish_left();
+  finish_right();
 }
 
 void motor_180()
@@ -169,5 +166,19 @@ static void finish_right()
   }
 
   set_speed(0);
+}
+
+static bool detect()
+{
+  unsigned int *values = sensor_values();
+  bool is_end = true;
+
+  // all sensors must be not receiving any reflected IR 
+  // if it's a dead end
+  for(int i = 0; i < SENSOR_COUNT; i++) {
+    is_end &= values[i] < 200;
+  }
+
+  return is_end;
 }
 

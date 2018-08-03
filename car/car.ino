@@ -2,7 +2,7 @@
 #include <logger.h>
 #include <rx_tx.h>
 #include "motor.h"
-#include "pkt.h"
+#include "comm.h"
 
 #define XBEE_READ_CYCLE 50U
 #define LOG_CYCLE 5000U
@@ -15,71 +15,43 @@ void setup()
   motor_init();
   delay(5000);
 
-  log_serial("Begin");
+  log_serial(F("Begin"));
   motor_calibrate();
   log_serial("Done");
   
-//  log_init(LOG_SOFT);
-//  
-//  log_serial(F("Booting... "));
-//  xbee_init();
-//  log_serial(F("Done\n"));
-//  
-//  log_serial(F("Retrieving node ID... "));
-//  uint16_t node_address;
-//  while(!xbee_address(&node_address));
-//  log_serial(F("0x%X\n"), node_address);
+  log_serial(F("Booting... "));
+  int node_address = comm_init();
+  log_serial(F("Done. Node ID is 0x%X\n"), node_address);
 }
 
 void loop() 
 {
-  while(1) {
-    motor_go();
-  }
-  
-//  static unsigned long last_xbee_read = 0;
-//  static unsigned long last_logged = 0;
-//
-//  if(check(&last_xbee_read, XBEE_READ_CYCLE)) {
-//    do_xbee_read();
-//  }
-//  
-//  if(check(&last_logged, LOG_CYCLE)) {
-//    do_log();
-//  }
-}
+  do {
+    // 1. wait for dst
+    struct comm_stx data;
+    comm_recv_stx(&data);
 
-bool check(unsigned long *last_millis, unsigned int cycle)
-{
-  unsigned long current_millis = millis();
-  if(current_millis - *last_millis >= cycle) {
-    *last_millis = current_millis;
-    return true;
-  }
+    int prev = data.src_node;
+    int next = data.next_node;
 
-  return false;
-}
+    while(motor_go() != MOTOR_END) {
+      // we reached a intersection
+      struct comm_req req;
+      req.dst_node = data.dst_node;
+      req.prev_node = prev;
 
-void do_xbee_read() 
-{
-  struct xbee_data data;
+      comm_send_req(next, &req);
 
-  if(xbee_rx(&data)) {
-    struct pkt pkt;
-    pkt_parse(&pkt, data.buf);
+      // wait for response
+      struct comm_res res;
+      comm_recv_res(&res);
 
-    if(pkt.type == MSG_DST) {
-      log_serial(F("Received MSG_DST packet: %d\n"), pkt.data); 
+      prev = next;
+      next = res.next_node;
+
+      
     }
-    else if(pkt.type == MSG_RES) {
-      log_serial(F("Received MSG_RES packet: %d\n"), pkt.data); 
-    }
-  }
-}
-
-void do_log()
-{
-  static unsigned long ctr = 0;
-  log_serial(F("Still Alive! %lu\n"), ++ctr);
+    
+  } while(1);
 }
 

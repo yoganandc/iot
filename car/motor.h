@@ -6,9 +6,12 @@ extern "C"
 {
 #endif
 
+#define MOTOR_END 1
+#define MOTOR_X   0
+
 void motor_init();
 void motor_calibrate();
-void motor_go();
+bool motor_go();
 void motor_left();
 void motor_right();
 void motor_180();

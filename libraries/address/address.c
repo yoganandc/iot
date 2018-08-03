@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "router_util.h"
+#include "address.h"
 
 static uint16_t addresses[MAX_ROUTERS] = {
   0x5678,

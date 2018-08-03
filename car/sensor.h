@@ -10,8 +10,8 @@ extern "C"
 #define SENSOR_TIMEOUT 2500
 
 #define SENSOR_CENTER      3500
-#define SENSOR_CENTER_LOW  3250
-#define SENSOR_CENTER_HIGH 4350
+#define SENSOR_CENTER_LOW  3000
+#define SENSOR_CENTER_HIGH 4000
 #define SENSOR_THRESHOLD   200
 
 void sensor_init();

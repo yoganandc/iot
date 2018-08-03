@@ -4,7 +4,7 @@
 #include <rx_tx.h>
 #include "router.h"
 #include "pkt.h"
-#include "router_util.h"
+#include "address.h"
 #include "lcd.h"
 
 static const uint8_t INF = 255;
