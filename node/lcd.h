@@ -3,7 +3,7 @@
 
 #ifdef __cplusplus
 
-#include "WString.h"
+#include <WString.h>
 void lcd_msg(const __FlashStringHelper *format, ...);
 
 extern "C"

@@ -8,9 +8,13 @@
 #define DIR_A 2
 #define DIR_B 4
 
-#define SPEED_TURN 200
+#define SPEED      170
 #define SPEED_SLOW 100
 #define SPEED_CAL  140
+
+#define KP 0.005
+
+#define CORRECTION_LIMIT 85
 
 #define LEFT 0
 #define RIGHT 1
@@ -50,20 +54,60 @@ void motor_calibrate()
 
 void motor_go()
 {
+  sensor_read();
+  unsigned int pos = sensor_position();
+
+  switch(pos) {
+    case 0: {
+      set_speed(SPEED);
+      set_dir(RIGHT);
+      log_serial("RIGHT\n");
+      break;
+    }
   
+    case 7000: {
+      set_speed(SPEED);
+      set_dir(LEFT);
+      log_serial("LEFT\n"); 
+      break;
+    }
+  
+    default: {
+      double correction = KP * ((int) pos - 3500);
+  
+      if(correction > CORRECTION_LIMIT) {
+        correction = CORRECTION_LIMIT;
+      }
+      if(correction < -CORRECTION_LIMIT) {
+        correction = -CORRECTION_LIMIT;
+      }
+      
+      int m1 = SPEED - correction;
+      int m2 = SPEED + correction;
+    
+      digitalWrite(DIR_A, LOW);
+      analogWrite(PWM_A, m1);
+      digitalWrite(DIR_B, LOW);
+      analogWrite(PWM_B, m2);
+
+      log_serial("pwm_a = %d pwm_b = %d\n", m1, m2);
+    }
+  }
+
+  delay(10);
 }
 
 void motor_left()
 {
   set_dir(LEFT);
-  set_speed(SPEED_TURN);
+  set_speed(SPEED);
   finish_left();
 }
 
 void motor_right()
 {
   set_dir(RIGHT);
-  set_speed(SPEED_TURN);
+  set_speed(SPEED);
   finish_left();
 }
 

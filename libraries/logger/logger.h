@@ -3,7 +3,7 @@
 
 #ifdef __cplusplus
 
-#include "WString.h"
+#include <WString.h>
 void log_serial(const __FlashStringHelper *format, ...);
 
 extern "C"

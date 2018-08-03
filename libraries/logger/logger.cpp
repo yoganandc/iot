@@ -1,8 +1,8 @@
 #include <AltSoftSerial.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include "Arduino.h"
-#include "WString.h"
+#include <Arduino.h>
+#include <WString.h>
 #include "logger.h"
 
 static Stream *stream;

@@ -14,7 +14,10 @@ void setup()
   
   motor_init();
   delay(5000);
+
+  log_serial("Begin");
   motor_calibrate();
+  log_serial("Done");
   
 //  log_init(LOG_SOFT);
 //  
@@ -30,17 +33,20 @@ void setup()
 
 void loop() 
 {
-  for(;;);
-  static unsigned long last_xbee_read = 0;
-  static unsigned long last_logged = 0;
-
-  if(check(&last_xbee_read, XBEE_READ_CYCLE)) {
-    do_xbee_read();
+  while(1) {
+    motor_go();
   }
   
-  if(check(&last_logged, LOG_CYCLE)) {
-    do_log();
-  }
+//  static unsigned long last_xbee_read = 0;
+//  static unsigned long last_logged = 0;
+//
+//  if(check(&last_xbee_read, XBEE_READ_CYCLE)) {
+//    do_xbee_read();
+//  }
+//  
+//  if(check(&last_logged, LOG_CYCLE)) {
+//    do_log();
+//  }
 }
 
 bool check(unsigned long *last_millis, unsigned int cycle)

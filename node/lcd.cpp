@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <logger.h>
-#include "Arduino.h"
-#include "WString.h"
+#include <Arduino.h>
+#include <WString.h>
 #include "lcd.h"
 
 #define V0 5
