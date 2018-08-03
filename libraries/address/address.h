@@ -1,5 +1,5 @@
-#ifndef ROUTER_UTIL_H
-#define ROUTER_UTIL_H
+#ifndef ADDRESS_H
+#define ADDRESS_H
 
 #ifdef __cplusplus
 extern "C"
