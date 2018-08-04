@@ -45,6 +45,7 @@ void comm_recv_res(struct comm_res *res)
 {
   uint8_t *buf = recv_pkt(MSG_RES);
   res->next_node = buf[0];
+  res->next_dir = buf[1];
 }
 
 void comm_recv_stx(struct comm_stx *stx)
