@@ -31,11 +31,6 @@ struct pkt_req {
   uint8_t prev;
 };
 
-struct pkt_res {
-  uint8_t next;
-  uint8_t dir;
-};
-
 uint8_t pkt_type(uint8_t *buf);
 void pkt_req_parse(uint8_t *buf, struct pkt_req *req);
 void pkt_iterator(uint8_t *buf, uint8_t len, struct pkt_iter *iter);

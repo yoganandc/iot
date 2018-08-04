@@ -11,7 +11,7 @@ extern "C"
 #define STRAIGHT   0
 #define RIGHT      1
 #define TURNAROUND 2
-#define LEFT       3 
+#define LEFT       3
 
 #define MSG_LINK 1
 #define MSG_DV   2
@@ -24,3 +24,4 @@ extern "C"
 #endif
 
 #endif
+
