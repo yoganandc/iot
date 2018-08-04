@@ -132,8 +132,8 @@ class XBeeTransmitter:
     def send_link_update(self, to, snapshot):
         self._q.put((MSG_LINK, (to, snapshot)))
         
-    def send_dst(self, dst):
-        self._q.put((MSG_DST, dst))
+    def send_dst(self, src, nxt, dst):
+        self._q.put((MSG_DST, (src, nxt, dst)))
         
     def _dispatch(self):
         dispatch_table = {
@@ -173,8 +173,15 @@ class XBeeTransmitter:
         threading.Thread(target=delayed_send).start()
         
     def _send_dst(self, msg):
+        src = msg[0]
+        nxt = msg[1]
+        dst = msg[2]
+        
         pkt = bytearray(MSG_DST.to_bytes(1, BYTEORDER))
-        pkt += msg.to_bytes(1, BYTEORDER)
+        pkt += src.to_bytes(1, BYTEORDER)
+        pkt += nxt.to_bytes(1, BYTEORDER)
+        pkt += dst.to_bytes(1, BYTEORDER)
+        
         try:
             self._xbee.send_data_16(XBee16BitAddress.from_hex_string(ADDRESS_CAR), pkt)
         except XBeeException:
@@ -222,8 +229,9 @@ class XBeeDaemon:
         self._tx.stop()
         self._rx.stop()
         
-    def send_dst(self, dst):
-        self._tx.send_dst(dst)
+    def send_dst(self, src, dst):
+        _, path = self._graph.path(src, dst)
+        self._tx.send_dst(src, path[1], dst)
 
 
 class RepeatingTimer:
@@ -322,19 +330,23 @@ class Prompt(cmd.Cmd):
         return False
     
     def do_dst(self, arg):
-        """Update the car's destination"""
+        """Update car's src and dst: dst 10 7"""
         try:
-            dst = int(arg)
+            args = arg.split()
+            src = int(args[0])
+            dst = int(args[1])
             
-            # Keep dst to terminal nodes for now
-            if dst < len(ADDRESS) or dst >= len(self._graph):
+            # Keep src and dst to terminal nodes for now
+            if src < len(ADDRESS) or src >= len(self._graph) \
+                    or dst < len(ADDRESS) or dst >= len(self._graph) \
+                    or src == dst:
                 raise ValueError
 
         except (ValueError, IndexError):
             print("unable to parse input")
             return False
         
-        self._daemon.send_dst(dst)
+        self._daemon.send_dst(src, dst)
         return False
     
     @staticmethod

@@ -19,6 +19,7 @@ struct comm_req {
 
 struct comm_res {
   int next_node;
+  int next_dir;
 };
 
 int comm_init();
