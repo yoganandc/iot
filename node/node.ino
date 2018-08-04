@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <logger.h>
 #include <rx_tx.h>
+#include <constants.h>
 #include "pkt.h"
 #include "router.h"
 #include "lcd.h"
@@ -78,27 +79,31 @@ void do_xbee_read()
   
   if(xbee_rx(&data)) {
     uint8_t type = pkt_type(data.buf);
-  
-    if(type == MSG_LINK) {
-      struct pkt_iter iter;
-      pkt_iterator(data.buf, data.len, &iter);
-      
-      log_serial(F("Recieved LINK message\n"));
-      process_link_update(&iter);
-    }
-    else if(type == MSG_DV) {
-      struct pkt_iter iter;
-      pkt_iterator(data.buf, data.len, &iter);
-      
-      log_serial(F("Received DV message from 0x%X\n"), data.address);
-      process_dv_update(data.address, &iter);
-    }
-    else if(type == MSG_REQ) {
-      struct pkt_req req;
-      pkt_req_parse(data.buf, &req);
-      
-      log_serial(F("Received REQ message\n"));
-      process_req(data.address, &req);
+
+    switch(type) {
+      case MSG_LINK: {
+        struct pkt_iter iter;
+        pkt_iterator(data.buf, data.len, &iter);
+        
+        log_serial(F("Recieved LINK message\n"));
+        process_link_update(&iter);
+        break;
+      }
+      case MSG_DV: {
+        struct pkt_iter iter;
+        pkt_iterator(data.buf, data.len, &iter);
+        
+        log_serial(F("Received DV message from 0x%X\n"), data.address);
+        process_dv_update(data.address, &iter);
+        break;
+      }
+      case MSG_REQ: {
+        struct pkt_req req;
+        pkt_req_parse(data.buf, &req);
+        
+        log_serial(F("Received REQ message\n"));
+        process_req(&req);
+      }
     }
   }
 }

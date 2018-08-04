@@ -2,15 +2,22 @@
 #include <stdint.h>
 #include <logger.h>
 #include <rx_tx.h>
+#include <constants.h>
 #include "router.h"
 #include "pkt.h"
 #include "address.h"
 #include "lcd.h"
 
-static const uint8_t INF = 255;
+#define NORTH 0
+#define EAST 1
+#define SOUTH 2
+#define WEST 3
+
+#define INF           255
+#define MAX_NEIGHBORS 4
+#define CAR_ADDRESS   0xF0F1
 
 static uint8_t self;
-static uint8_t buf[MAX_ROUTERS*2 + 1];
 
 static uint8_t next_hop[MAX_ROUTERS];
 static uint8_t dv[MAX_ROUTERS][MAX_ROUTERS];
@@ -118,6 +125,7 @@ static bool bf()
 
 static void update_neighbors()
 {
+  static uint8_t buf[MAX_ROUTERS*2 + 1];
   int idx = 0;
   
   buf[idx++] = MSG_DV;
@@ -138,9 +146,57 @@ static void update_neighbors()
   }
 }
 
-void process_req(uint16_t from_address, struct pkt_req *req)
+void process_req(struct pkt_req *req)
 {
-  
+  // idx1 = car_dir, idx2 = next_dir
+  static uint8_t turn_table[MAX_NEIGHBORS][MAX_NEIGHBORS] = {
+    {STRAIGHT, RIGHT, TURNAROUND, LEFT}, // NORTH
+    {LEFT, STRAIGHT, RIGHT, TURNAROUND}, // EAST
+    {TURNAROUND, LEFT, STRAIGHT, RIGHT}, // SOUTH
+    {RIGHT, TURNAROUND, LEFT, STRAIGHT}  // WEST
+  };
+
+  int idx;
+  for(int i = 0; i < num_neighbors; i++) {
+    if(neighbors[i] == req->prev) {
+      idx = i;
+      break;
+    }
+  }
+
+  int prev_dir = neighbor_dirs[idx];
+  int car_dir;
+
+  switch(prev_dir) {
+    case NORTH: car_dir = SOUTH; break;
+    case SOUTH: car_dir = NORTH; break;
+    case EAST: car_dir = WEST; break;
+    case WEST: car_dir = EAST; break; 
+  }
+
+  int next = next_hop[req->dst];
+
+  for(int i = 0; i < num_neighbors; i++) {
+    if(neighbors[i] == next) {
+      idx = i;
+      break;
+    }
+  }
+
+  int next_dir = neighbor_dirs[idx];
+  uint8_t turn = turn_table[car_dir][next_dir];
+
+  static uint8_t buf[3];
+  buf[0] = MSG_RES;
+  buf[1] = next;
+  buf[2] = turn;
+
+  struct xbee_data data;
+  data.buf = buf;
+  data.len = 3;
+  data.address = CAR_ADDRESS;
+
+  xbee_tx(&data);
 }
 
 void router_log() 

@@ -9,11 +9,6 @@ extern "C"
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MSG_LINK 1
-#define MSG_DV   2
-#define MSG_REQ  3
-#define MSG_RES  4
-
 struct pkt_iter {
   uint8_t *buf;
   uint8_t  len;

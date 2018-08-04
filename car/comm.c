@@ -3,12 +3,9 @@
 #include <Arduino.h>
 #include <rx_tx.h>
 #include <logger.h>
+#include <constants.h>
 #include "comm.h"
 #include "address.h"
-
-#define MSG_STX 3
-#define MSG_REQ 4
-#define MSG_RES 5
 
 struct pkt {
   uint8_t type;
