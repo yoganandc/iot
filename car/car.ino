@@ -17,7 +17,7 @@ void setup()
 
   log_serial(F("Begin"));
   motor_calibrate();
-  log_serial("Done");
+  log_serial(F("Done"));
   
   log_serial(F("Booting... "));
   int node_address = comm_init();

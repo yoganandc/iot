@@ -347,7 +347,7 @@ class Prompt(cmd.Cmd):
 
 
 def main():
-    graph = Graph(GRAPH2)
+    graph = Graph(GRAPH1)
     xbee = Raw802Device(PORT, BAUD)
     xbee.open()
     daemon = XBeeDaemon(graph, xbee)

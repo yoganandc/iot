@@ -41,13 +41,13 @@ void router_init(uint16_t node_address)
   self = address_to_id(node_address);
 }
 
-void process_link_update(struct pkt *pkt) 
+void process_link_update(struct pkt_iter *iter) 
 {
   uint8_t count = 0;
   
-  while(has_next(pkt)) {
-    struct pkt_entry entry;
-    next(pkt, &entry);
+  while(pkt_has_next(iter)) {
+    struct pkt_link entry;
+    pkt_link_next(iter, &entry);
     
     neighbors[count] = entry.node;
     neighbor_dirs[count] = entry.dir;
@@ -64,14 +64,14 @@ void process_link_update(struct pkt *pkt)
   update_neighbors();
 }
 
-void process_dv_update(uint16_t from_address, struct pkt *pkt)
+void process_dv_update(uint16_t from_address, struct pkt_iter *iter)
 {
   bool changed = false;
   uint8_t from = address_to_id(from_address);
 
-  while(has_next(pkt)) {
-    struct pkt_entry entry;
-    next(pkt, &entry);
+  while(pkt_has_next(iter)) {
+    struct pkt_dv entry;
+    pkt_dv_next(iter, &entry);
 
      dv[from][entry.node] = entry.cost;
 
@@ -136,6 +136,11 @@ static void update_neighbors()
       xbee_tx(&data);
     }
   }
+}
+
+void process_req(uint16_t from_address, struct pkt_req *req)
+{
+  
 }
 
 void router_log() 

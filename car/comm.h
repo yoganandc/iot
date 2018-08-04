@@ -7,9 +7,9 @@ extern "C"
 #endif
 
 struct comm_stx {
-  int dst_node;
   int src_node;
   int next_node;
+  int dst_node;
 };
 
 struct comm_req {

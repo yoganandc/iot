@@ -77,16 +77,28 @@ void do_xbee_read()
   struct xbee_data data;
   
   if(xbee_rx(&data)) {
-    struct pkt pkt;
-    pkt_init(&pkt, data.buf, data.len);
+    uint8_t type = pkt_type(data.buf);
   
-    if(pkt.type == MSG_LINK) {
+    if(type == MSG_LINK) {
+      struct pkt_iter iter;
+      pkt_iterator(data.buf, data.len, &iter);
+      
       log_serial(F("Recieved LINK message\n"));
-      process_link_update(&pkt);
+      process_link_update(&iter);
     }
-    else if(pkt.type == MSG_DV) {
+    else if(type == MSG_DV) {
+      struct pkt_iter iter;
+      pkt_iterator(data.buf, data.len, &iter);
+      
       log_serial(F("Received DV message from 0x%X\n"), data.address);
-      process_dv_update(data.address, &pkt);
+      process_dv_update(data.address, &iter);
+    }
+    else if(type == MSG_REQ) {
+      struct pkt_req req;
+      pkt_req_parse(data.buf, &req);
+      
+      log_serial(F("Received REQ message\n"));
+      process_req(data.address, &req);
     }
   }
 }
