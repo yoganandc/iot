@@ -15,9 +15,8 @@ EAST = 1
 SOUTH = 2
 WEST = 3
 
-ADDRESS = ["5678", "90AB", "CDEF", "1011", "1213"]
+ADDRESS = ["5678", "90AB", "CDEF"]  # , "1011", "1213"]
 ADDRESS_CAR = "F0F1"
-DIRS = ["NORTH", "EAST", "SOUTH", "WEST"]
 
 GRAPH1 = {
     0: [[8, 8, NORTH], [1, 10, EAST], [2, 8, SOUTH], [9, 24, WEST]],

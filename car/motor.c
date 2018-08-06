@@ -1,20 +1,27 @@
+#include <stdbool.h>
 #include <Arduino.h>
 #include "motor.h"
 #include "sensor.h"
 #include "logger.h"
 
-#define PWM_A 3
-#define PWM_B 11
-#define DIR_A 2
-#define DIR_B 4
+#define PWM_L 3
+#define PWM_R 11
+#define DIR_L 2
+#define DIR_R 4
 
-#define SPEED      170
+#define SPEED      130
 #define SPEED_SLOW 100
-#define SPEED_CAL  140
+#define SPEED_CAL  110
 
-#define KP 0.025
+#define KP 0.04
+#define KD 0.0
 
-#define CORRECTION_LIMIT 85
+#define LEFT_EXTREME 7
+#define LEFT_ALMOST 6
+#define RIGHT_EXTREME 0
+#define RIGHT_ALMOST 1
+
+#define CORRECTION_LIMIT 55
 
 #define LEFT 0
 #define RIGHT 1
@@ -24,13 +31,14 @@ static void set_speed(int);
 static void finish_left();
 static void finish_right();
 static bool detect();
+static void correct();
 
 void motor_init()
 {
-  pinMode(PWM_A, OUTPUT);
-  pinMode(PWM_B, OUTPUT);
-  pinMode(DIR_A, OUTPUT);
-  pinMode(DIR_B, OUTPUT);
+  pinMode(PWM_L, OUTPUT);
+  pinMode(PWM_R, OUTPUT);
+  pinMode(DIR_L, OUTPUT);
+  pinMode(DIR_R, OUTPUT);
 
   set_speed(0);
   sensor_init();
@@ -57,40 +65,25 @@ bool motor_go()
 {
   while(1) {
     sensor_read();
-    unsigned int pos = sensor_position();
-  
-    switch(pos) {
-      case 0: {
-        set_speed(0);
-        return detect();
-      }
-    
-      case 7000: {
-        set_speed(0);
-        return detect();
-      }
-    
-      default: {
-        double correction = KP * ((int) pos - 3500);
-    
-        if(correction > CORRECTION_LIMIT) {
-          correction = CORRECTION_LIMIT;
-        }
-        if(correction < -CORRECTION_LIMIT) {
-          correction = -CORRECTION_LIMIT;
-        }
-        
-        int m1 = SPEED - correction;
-        int m2 = SPEED + correction;
-      
-        digitalWrite(DIR_A, LOW);
-        analogWrite(PWM_A, m1);
-        digitalWrite(DIR_B, LOW);
-        analogWrite(PWM_B, m2);
-      }
+    unsigned int *values = sensor_values();
+
+    if(values[RIGHT_EXTREME] == 1000 || values[LEFT_EXTREME] == 1000) {
+//      log_serial("hit intersection\n");
+      set_speed(0);
+      return detect();
     }
-  
-    delay(10);
+
+    if(values[RIGHT_ALMOST] > SENSOR_THRESHOLD) {
+//      log_serial("hit right sensor, must correct right\n");
+      set_speed(SPEED_SLOW);
+    }
+
+    if(values[LEFT_ALMOST] > SENSOR_THRESHOLD) {
+//      log_serial("hit left sensor, must correct left\n");
+      set_speed(SPEED_SLOW);
+    }
+    
+    correct();
   }
 }
 
@@ -113,24 +106,40 @@ void motor_180()
   
 }
 
+bool motor_has_left()
+{
+  sensor_read();
+  uint8_t *values = sensor_values;
+  return sensor[LEFT_EXTREME] > SENSOR_THRESHOLD;
+}
+
+bool motor_has_right()
+{
+  sensor_read();
+  uint8_t *values = sensor_values;
+  return sensor[RIGHT_EXTREME] > SENSOR_THRESHOLD;
+}
+
 static void set_dir(int dir)
 {
-  digitalWrite(DIR_A, !dir);
-  digitalWrite(DIR_B, dir);
+  digitalWrite(DIR_L, !dir);
+  digitalWrite(DIR_R, dir);
 }
 
 static void set_speed(int speed)
 {
-  analogWrite(PWM_A, speed);
-  analogWrite(PWM_B, speed);
+  analogWrite(PWM_L, speed);
+  analogWrite(PWM_R, speed);
 }
 
 static void finish_left()
 {
   sensor_read();
   unsigned int *values = sensor_values();
-  
-  while(values[6] < SENSOR_THRESHOLD) {
+
+  // left sensor hitting tape means we are almost
+  // done
+  while(values[LEFT_EXTREME] < SENSOR_THRESHOLD) {
     sensor_read();
     values = sensor_values();
   }
@@ -143,16 +152,18 @@ static void finish_left()
     pos = sensor_position();
   }
 
-  analogWrite(PWM_B, 0); // stop right first
-  analogWrite(PWM_A, 0);
+  analogWrite(PWM_R, 0); // stop right first
+  analogWrite(PWM_L, 0);
 }
 
 static void finish_right()
 {
   sensor_read();
   unsigned int *values = sensor_values();
-  
-  while(values[1] < SENSOR_THRESHOLD) {
+
+  // right sensor hitting tape means we are almost done
+  // turning
+  while(values[RIGHT_EXTREME] < SENSOR_THRESHOLD) {
     sensor_read();
     values = sensor_values();
   }
@@ -168,6 +179,45 @@ static void finish_right()
   set_speed(0);
 }
 
+static void correct() 
+{
+  static int last_error;
+  static bool first_time;
+  double correction;
+  int error = (int) sensor_position() - 3500;
+
+  if(first_time) {
+    first_time = false;
+    correction = KP * error;
+  }
+  else {
+    correction = KP * error + KD * (error - last_error);
+  }
+  last_error = error;
+    
+  if(correction > CORRECTION_LIMIT) {
+    correction = CORRECTION_LIMIT;
+  }
+  if(correction < -CORRECTION_LIMIT) {
+    correction = -CORRECTION_LIMIT;
+  }
+  
+  int m1 = SPEED - correction;
+  int m2 = SPEED + correction;
+
+//  if(m1 > m2) {
+//    log_serial("correct right (%d), error: %d m_l: %d m_r: %d\n", (int) correction, (int) sensor_position() - 3500, m1, m2);
+//  }
+//  else {
+//    log_serial("correct left (%d), error: %d m_l: %d m_r: %d\n",(int) correction, (int) sensor_position() - 3500, m1, m2);
+//  }
+
+  digitalWrite(DIR_L, LOW);
+  analogWrite(PWM_L, m1);
+  digitalWrite(DIR_R, LOW);
+  analogWrite(PWM_R, m2);
+}
+
 static bool detect()
 {
   unsigned int *values = sensor_values();
@@ -176,7 +226,7 @@ static bool detect()
   // all sensors must be not receiving any reflected IR 
   // if it's a dead end
   for(int i = 0; i < SENSOR_COUNT; i++) {
-    is_end &= values[i] < 200;
+    is_end &= values[i] > SENSOR_THRESHOLD;
   }
 
   return is_end;

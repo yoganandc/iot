@@ -1,6 +1,8 @@
 #include <QTRSensors.h> 
 #include "sensor.h"
 
+#define SENSOR_TIMEOUT 2500
+
 static QTRSensorsRC *qtrrc;
 static unsigned int values[SENSOR_COUNT];
 static unsigned int position;
