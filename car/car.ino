@@ -33,25 +33,29 @@ void loop()
   int prev = data.src_node;
   int next = data.next_node;
   
-  while(motor_go() != MOTOR_END) {
-    unsigned long start = millis();
+  while(true) {
+    motor_go();
+
+    // finish if we reached our destination
+    if(next == data.dst_node) {
+      for(;;);
+    }
     
     // we reached a intersection
     struct comm_req req;
     req.dst_node = data.dst_node;
     req.prev_node = prev;
-    
+
+    log_serial(F("Sending req to node with id = %d: prev = %d dst = %d... "), next, req.prev_node, req.dst_node);
     comm_send_req(next, &req);
+    log_serial(F("Done\n"));
     
     // wait for response
+    log_serial(F("Waiting for res\n"));
     struct comm_res res;
     comm_recv_res(&res);
-
-    unsigned long diff = millis() - start;
-
-    if(diff < 100) {
-      delay(100 - diff);
-    }
+    static char const *dirs[] = {"STRAIGHT", "RIGHT", "TURNAROUND", "LEFT"};
+    log_serial(F("Got res: nxt = %d dir = %s\n"), res.next_node, dirs[res.next_dir]);
     
     prev = next;
     next = res.next_node;

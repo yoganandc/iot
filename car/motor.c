@@ -13,13 +13,15 @@
 #define SPEED_SLOW 100
 #define SPEED_CAL  110
 
-#define KP 0.04
+#define KP 0.02
 #define KD 0.0
 
 #define LEFT_EXTREME 7
 #define LEFT_ALMOST 6
+#define LEFT_CENTER 4
 #define RIGHT_EXTREME 0
 #define RIGHT_ALMOST 1
+#define RIGHT_CENTER 3
 
 #define CORRECTION_LIMIT 55
 
@@ -30,7 +32,6 @@ static void set_dir(int);
 static void set_speed(int);
 static void finish_left();
 static void finish_right();
-static bool detect();
 static void correct();
 
 void motor_init()
@@ -61,24 +62,48 @@ void motor_calibrate()
   finish_left();
 }
 
-bool motor_go()
+void motor_go()
 {
   while(1) {
     sensor_read();
     unsigned int *values = sensor_values();
 
-    if(values[RIGHT_EXTREME] == 1000 || values[LEFT_EXTREME] == 1000) {
-//      log_serial("hit intersection\n");
+    if(values[RIGHT_EXTREME] == 1000 || values[LEFT_EXTREME] == 1000) {      
+      bool has_right = values[RIGHT_EXTREME] == 1000;
+      bool has_left = values[LEFT_EXTREME] == 1000;
+      
+      set_speed(SPEED_SLOW);
+      while(values[RIGHT_EXTREME] > SENSOR_THRESHOLD || values[LEFT_EXTREME] > SENSOR_THRESHOLD) {
+        sensor_read();
+        values = sensor_values();
+      }
+
       set_speed(0);
-      return detect();
+
+      if(has_left && has_right) {
+        //we know for sure that this is an intersection
+        return;
+      }
+      else {
+        // check if straight exists
+        if(values[RIGHT_CENTER] > SENSOR_THRESHOLD || values[LEFT_CENTER] > SENSOR_THRESHOLD) {
+          return;
+        }
+        else if(has_left) {
+          motor_left();
+        }
+        else {
+          motor_right();
+        }
+      }
     }
 
-    if(values[RIGHT_ALMOST] > SENSOR_THRESHOLD) {
+    else if(values[RIGHT_ALMOST] > SENSOR_THRESHOLD) {
 //      log_serial("hit right sensor, must correct right\n");
       set_speed(SPEED_SLOW);
     }
 
-    if(values[LEFT_ALMOST] > SENSOR_THRESHOLD) {
+    else if(values[LEFT_ALMOST] > SENSOR_THRESHOLD) {
 //      log_serial("hit left sensor, must correct left\n");
       set_speed(SPEED_SLOW);
     }
@@ -104,20 +129,6 @@ void motor_right()
 void motor_180()
 {
   
-}
-
-bool motor_has_left()
-{
-  sensor_read();
-  uint8_t *values = sensor_values;
-  return sensor[LEFT_EXTREME] > SENSOR_THRESHOLD;
-}
-
-bool motor_has_right()
-{
-  sensor_read();
-  uint8_t *values = sensor_values;
-  return sensor[RIGHT_EXTREME] > SENSOR_THRESHOLD;
 }
 
 static void set_dir(int dir)
@@ -146,10 +157,9 @@ static void finish_left()
 
   set_speed(SPEED_SLOW);
 
-  unsigned int pos = sensor_position();
-  while(pos > SENSOR_CENTER_HIGH) {
+  while(values[LEFT_CENTER] < SENSOR_THRESHOLD) {
     sensor_read();
-    pos = sensor_position();
+    values = sensor_values();
   }
 
   analogWrite(PWM_R, 0); // stop right first
@@ -170,10 +180,9 @@ static void finish_right()
 
   set_speed(SPEED_SLOW);
 
-  unsigned int pos = sensor_position();
-  while(pos < SENSOR_CENTER_LOW) {
+  while(values[RIGHT_CENTER] < SENSOR_THRESHOLD) {
     sensor_read();
-    pos = sensor_position();
+    values = sensor_values();
   }
 
   set_speed(0);
@@ -216,19 +225,5 @@ static void correct()
   analogWrite(PWM_L, m1);
   digitalWrite(DIR_R, LOW);
   analogWrite(PWM_R, m2);
-}
-
-static bool detect()
-{
-  unsigned int *values = sensor_values();
-  bool is_end = true;
-
-  // all sensors must be not receiving any reflected IR 
-  // if it's a dead end
-  for(int i = 0; i < SENSOR_COUNT; i++) {
-    is_end &= values[i] > SENSOR_THRESHOLD;
-  }
-
-  return is_end;
 }
 
