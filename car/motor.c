@@ -4,24 +4,29 @@
 #include "sensor.h"
 #include "logger.h"
 
+#define btoa(x) ((x) ? "true" : "false")
+
 #define PWM_L 3
 #define PWM_R 11
 #define DIR_L 2
 #define DIR_R 4
 
-#define SPEED      130
-#define SPEED_SLOW 100
-#define SPEED_CAL  110
+#define SPEED            130
+#define SPEED_SLOW       100
+#define SPEED_SUPER_SLOW  80
+#define SPEED_CAL        110
 
 #define KP 0.02
 #define KD 0.0
 
-#define LEFT_EXTREME 7
-#define LEFT_ALMOST 6
-#define LEFT_CENTER 4
+#define LEFT_EXTREME  7
+#define LEFT_ALMOST   6
+#define LEFT_CENTER   4
+#define LEFT_X        5 // I have no idea why it's called this
 #define RIGHT_EXTREME 0
-#define RIGHT_ALMOST 1
-#define RIGHT_CENTER 3
+#define RIGHT_ALMOST  1
+#define RIGHT_CENTER  3
+#define RIGHT_X       2
 
 #define CORRECTION_LIMIT 55
 
@@ -68,12 +73,13 @@ void motor_go()
     sensor_read();
     unsigned int *values = sensor_values();
 
-    if(values[RIGHT_EXTREME] == 1000 || values[LEFT_EXTREME] == 1000) {      
-      bool has_right = values[RIGHT_EXTREME] == 1000;
-      bool has_left = values[LEFT_EXTREME] == 1000;
+    bool has_right = values[RIGHT_EXTREME] == 1000 && values[RIGHT_ALMOST] == 1000 && values[RIGHT_X] == 1000;
+    bool has_left = values[LEFT_EXTREME] == 1000 && values[LEFT_ALMOST] == 1000 && values[LEFT_X] == 1000;
+
+    if(has_left || has_right) {
+      set_speed(SPEED_SUPER_SLOW);
       
-      set_speed(SPEED_SLOW);
-      while(values[RIGHT_EXTREME] > SENSOR_THRESHOLD || values[LEFT_EXTREME] > SENSOR_THRESHOLD) {
+      while(values[RIGHT_ALMOST] > 100 || values[LEFT_ALMOST] > 100) {
         sensor_read();
         values = sensor_values();
       }
@@ -81,30 +87,32 @@ void motor_go()
       set_speed(0);
 
       if(has_left && has_right) {
-        //we know for sure that this is an intersection
         return;
       }
+      
+      if(values[RIGHT_CENTER] > SENSOR_THRESHOLD || values[LEFT_CENTER] > SENSOR_THRESHOLD) {
+        log_serial("has_straight = true\n");
+        sensor_log();
+        return;
+      }
+      
+      if(has_left) {
+        log_serial("going left\n");
+        sensor_log();
+        motor_left();
+      }
       else {
-        // check if straight exists
-        if(values[RIGHT_CENTER] > SENSOR_THRESHOLD || values[LEFT_CENTER] > SENSOR_THRESHOLD) {
-          return;
-        }
-        else if(has_left) {
-          motor_left();
-        }
-        else {
-          motor_right();
-        }
+        log_serial("going right\n");
+        sensor_log();
+        motor_right();
       }
     }
 
     else if(values[RIGHT_ALMOST] > SENSOR_THRESHOLD) {
-//      log_serial("hit right sensor, must correct right\n");
       set_speed(SPEED_SLOW);
     }
 
     else if(values[LEFT_ALMOST] > SENSOR_THRESHOLD) {
-//      log_serial("hit left sensor, must correct left\n");
       set_speed(SPEED_SLOW);
     }
     

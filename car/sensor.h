@@ -18,6 +18,7 @@ void sensor_calibrate();
 void sensor_read();
 unsigned int sensor_position();
 unsigned int *sensor_values();
+void sensor_log();
 
 #ifdef __cplusplus
 }

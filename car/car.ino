@@ -24,11 +24,9 @@ void setup()
 
 void loop() 
 { 
-  log_serial(F("Waiting for dst\n"));
   // 1. wait for dst
   struct comm_stx data;
   comm_recv_stx(&data);
-  log_serial(F("Got dst: src = %d nxt = %d dst = %d\n"), data.src_node, data.next_node, data.dst_node);
   
   int prev = data.src_node;
   int next = data.next_node;
@@ -38,6 +36,7 @@ void loop()
 
     // finish if we reached our destination
     if(next == data.dst_node) {
+      log_serial(F("Stopping\n"));
       for(;;);
     }
     
@@ -45,13 +44,10 @@ void loop()
     struct comm_req req;
     req.dst_node = data.dst_node;
     req.prev_node = prev;
-
-    log_serial(F("Sending req to node with id = %d: prev = %d dst = %d... "), next, req.prev_node, req.dst_node);
+    
     comm_send_req(next, &req);
-    log_serial(F("Done\n"));
     
     // wait for response
-    log_serial(F("Waiting for res\n"));
     struct comm_res res;
     comm_recv_res(&res);
     static char const *dirs[] = {"STRAIGHT", "RIGHT", "TURNAROUND", "LEFT"};

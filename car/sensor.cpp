@@ -1,5 +1,6 @@
 #include <QTRSensors.h> 
 #include "sensor.h"
+#include "logger.h"
 
 #define SENSOR_TIMEOUT 2500
 
@@ -32,5 +33,18 @@ unsigned int sensor_position()
 unsigned int *sensor_values()
 {
   return values;
+}
+
+void sensor_log()
+{
+  sensor_read();
+  unsigned int pos = sensor_position();
+  unsigned int *values = sensor_values();
+
+  log_serial("pos = %d, values = [%d", pos, values[0]);
+  for(int i = 1; i < SENSOR_COUNT; i++) {
+    log_serial(", %d", values[i]);
+  }
+  log_serial("]");
 }
 

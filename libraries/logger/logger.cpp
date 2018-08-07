@@ -15,7 +15,7 @@ void log_init(int type)
     stream = &Serial;
   }
   else if(type == LOG_SOFT) {
-    soft_serial.begin(57600);
+    soft_serial.begin(19200);
     stream = &soft_serial;
   }
 }
