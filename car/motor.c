@@ -77,35 +77,8 @@ void motor_go()
     bool has_left = values[LEFT_EXTREME] == 1000 && values[LEFT_ALMOST] == 1000 && values[LEFT_X] == 1000;
 
     if(has_left || has_right) {
-      set_speed(SPEED_SUPER_SLOW);
-      
-      while(values[RIGHT_ALMOST] > 100 || values[LEFT_ALMOST] > 100) {
-        sensor_read();
-        values = sensor_values();
-      }
-
       set_speed(0);
-
-      if(has_left && has_right) {
-        return;
-      }
-      
-      if(values[RIGHT_CENTER] > SENSOR_THRESHOLD || values[LEFT_CENTER] > SENSOR_THRESHOLD) {
-        log_serial("has_straight = true\n");
-        sensor_log();
-        return;
-      }
-      
-      if(has_left) {
-        log_serial("going left\n");
-        sensor_log();
-        motor_left();
-      }
-      else {
-        log_serial("going right\n");
-        sensor_log();
-        motor_right();
-      }
+      return;
     }
 
     else if(values[RIGHT_ALMOST] > SENSOR_THRESHOLD) {
@@ -136,7 +109,8 @@ void motor_right()
 
 void motor_180()
 {
-  
+  motor_right();
+  motor_right();
 }
 
 static void set_dir(int dir)
