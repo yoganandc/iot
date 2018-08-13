@@ -7,7 +7,7 @@ Nodes at every intersection are equipped with wireless radios that can communica
 intersections and vehicles approaching the intersection. By estimating traffic outgoing in each direction
 and exchanging information with other nodes, optimal paths are discovered for all destinations.
 
-[![Demo](https://i.imgur.com/AefMG4W.png)](https://vimeo.com/284643990 "Demo")
+[![Demo](https://i.imgur.com/87mekYA.png)](https://vimeo.com/284643990 "Demo")
 
 ### The algorithm
 
