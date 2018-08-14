@@ -24,7 +24,7 @@ By exchanging distance vectors with its neighbors, each node's own distance vect
 #### Computer
 
 Within the scope of this project, nodes cannot discover their neighbors automatically nor can they sense the amount of traffic 
-flowing along each outgoing edge. This information (about neighbors and link costs to them) is periodically sent from an XBee module attached to a computer running [this](https://github.ccs.neu.edu/yoganandc/traffic-manager/blob/master/main.py) script.
+flowing along each outgoing edge. This information (about neighbors and link costs to them) is periodically sent from an XBee module attached to a computer running [this](main.py) script.
 
 The computer is also used to start the car towards its destination, and update edge weights.
 
