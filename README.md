@@ -40,7 +40,7 @@ node asking it which direction to turn (left, right, or straight).
 
 ### Protocol
 
-*Each block in the table is 8 bits in length.* Each message begins with a one-byte long message-type identifier.
+*Each block in the table is 8 bits in length. Each message begins with a one-byte long message-type identifier.*
 
 **1. MSG_LINK**: Sent from the computer to nodes periodically.
 
