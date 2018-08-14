@@ -26,7 +26,7 @@ class Graph:
         
     def snapshot(self):
         ret = {}
-        with self._lock:
+        with self._lock: 
             for node in self._graph:
                 ret[node] = []
                 for edge in self._graph[node]:
@@ -359,7 +359,7 @@ class Prompt(cmd.Cmd):
 
 
 def main():
-    graph = Graph(GRAPH2)
+    graph = Graph(GRAPH3)
     xbee = Raw802Device(PORT, BAUD)
     xbee.open()
     daemon = XBeeDaemon(graph, xbee)

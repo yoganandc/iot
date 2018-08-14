@@ -15,7 +15,7 @@ EAST = 1
 SOUTH = 2
 WEST = 3
 
-ADDRESS = ["5678", "90AB", "CDEF", "1011", ]  # "1213"]
+ADDRESS = ["5678", "90AB", "CDEF", "1011", "1213"]
 ADDRESS_CAR = "F0F1"
 
 GRAPH1 = {
@@ -43,4 +43,20 @@ GRAPH2 = {
     5: [[1, 7, WEST]],
     6: [[1, 6, SOUTH]],
     7: [[0, 8, SOUTH]]
+}
+
+GRAPH3 = {
+    0: [[12, 2, NORTH], [1, 55, EAST], [3, 12, SOUTH], [4, 6, WEST]],
+    1: [[11, 9, NORTH], [10, 2, EAST], [2, 18, SOUTH], [0, 55, WEST]],
+    2: [[1, 18, NORTH], [9, 4, EAST], [3, 15, WEST]],
+    3: [[0, 12, NORTH], [2, 15, EAST], [8, 1, WEST]],
+    4: [[5, 9, NORTH], [0, 6, EAST], [7, 7, SOUTH], [6, 9, WEST]],
+    5: [[4, 9, SOUTH]],
+    6: [[4, 9, EAST]],
+    7: [[4, 7, NORTH]],
+    8: [[3, 1, EAST]],
+    9: [[2, 4, WEST]],
+    10: [[1, 2, WEST]],
+    11: [[1, 9, SOUTH]],
+    12: [[0, 2, SOUTH]]
 }
